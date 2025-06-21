@@ -15,8 +15,7 @@ import { Button } from "./ui/button";
 import { Trash2 } from "lucide-react";
 
 // ✅ Helper to map size to Tailwind class
-function getSizeClass(size: string) {
-  console.log(size,'size Of All')
+function getSizeClass(size: string,element:any) {
   switch (size) {
     case "small":
       return "col-span-3";
@@ -209,7 +208,7 @@ function DesignerElementWrapper({ element }: { element: FormElementInstance }) {
       {...draggable.attributes}
       className={cn(
         "relative rounded-md text-foreground ring-1 ring-inset ring-accent hover:cursor-pointer",
-        getSizeClass(size) // ✅ Apply col-span
+        getSizeClass(size,element) // ✅ Apply col-span
       )}
       onMouseEnter={() => setMouseIsOver(true)}
       onMouseLeave={() => setMouseIsOver(false)}

@@ -123,9 +123,8 @@ function FormComponent({
   }, [isInvalid]);
 
   const { label, required, helperText, size } = element.extraAttributes;
-
   const sizeClass =
-    size === "small" ? "col-span-3" : size === "large" ? "col-span-6" : "col-span-12";
+    size === "small" ? "col-span-3" : size === "medium" ? "col-span-6" : "col-span-12";
 
   return (
     <div className={cn("flex w-full flex-col gap-2", sizeClass)}>
