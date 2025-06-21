@@ -20,14 +20,18 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Textarea } from "../ui/textarea";
+import { cn } from "@/lib/utils";
 
 const type: ElementsType = "ParagraphField";
+
 const extraAttributes = {
   text: "Paragraph field",
+  size: "medium" as "small" | "medium" | "large",
 };
 
 const propertiesSchema = z.object({
   text: z.string().min(2).max(500),
+  size: z.enum(["small", "medium", "large"]).default("medium"),
 });
 
 export const ParagraphFieldFormElement: FormElement = {
@@ -53,16 +57,29 @@ type CustomInstance = FormElementInstance & {
 
 type PropertiesFormSchemaType = z.infer<typeof propertiesSchema>;
 
+function getSizeClass(size: "small" | "medium" | "large" = "medium") {
+  switch (size) {
+    case "small":
+      return "col-span-3";
+    case "medium":
+      return "col-span-6";
+    case "large":
+      return "col-span-12";
+    default:
+      return "col-span-6";
+  }
+}
+
 function DesignerComponent({
   elementInstance,
 }: {
   elementInstance: FormElementInstance;
 }) {
   const element = elementInstance as CustomInstance;
-  const { text } = element.extraAttributes;
+  const { text, size } = element.extraAttributes;
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className={cn("flex w-full flex-col gap-2", getSizeClass(size))}>
       <Label className="text-muted-foreground">Paragraph field</Label>
       <p>{text}</p>
     </div>
@@ -75,9 +92,9 @@ function FormComponent({
   elementInstance: FormElementInstance;
 }) {
   const element = elementInstance as CustomInstance;
-  const { text } = element.extraAttributes;
+  const { text, size } = element.extraAttributes;
 
-  return <p>{text}</p>;
+  return <p className={getSizeClass(size)}>{text}</p>;
 }
 
 function PropertiesComponent({
@@ -87,11 +104,13 @@ function PropertiesComponent({
 }) {
   const { updateElement } = useDesigner();
   const element = elementInstance as CustomInstance;
+
   const form = useForm<PropertiesFormSchemaType>({
     resolver: zodResolver(propertiesSchema),
     mode: "onBlur",
     defaultValues: {
-      text: element.extraAttributes.title,
+      text: element.extraAttributes.text,
+      size: element.extraAttributes.size || "medium",
     },
   });
 
@@ -100,11 +119,12 @@ function PropertiesComponent({
   }, [element, form]);
 
   function applyChanges(values: PropertiesFormSchemaType) {
-    const { text } = values;
+    const { text, size } = values;
     updateElement(element.id, {
       ...element,
       extraAttributes: {
         text,
+        size,
       },
     });
   }
@@ -131,6 +151,27 @@ function PropertiesComponent({
                     }
                   }}
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel htmlFor={field.name}>Size</FormLabel>
+              <FormControl>
+                <select
+                  {...field}
+                  className="w-full border rounded-md px-2 py-1 bg-background text-foreground"
+                >
+                  <option value="small">Small (col-span-3)</option>
+                  <option value="medium">Medium (col-span-6)</option>
+                  <option value="large">Large (col-span-12)</option>
+                </select>
               </FormControl>
               <FormMessage />
             </FormItem>

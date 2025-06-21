@@ -34,12 +34,14 @@ const extraAttributes = {
   label: "Date field",
   helperText: "Pick a date",
   required: false,
+  size: "medium",
 };
 
 const propertiesSchema = z.object({
   label: z.string().max(50),
   helperText: z.string().max(200),
   required: z.boolean().default(false),
+  size: z.enum(["small", "medium", "large"]).default("medium"),
 });
 
 export const DateFieldFormElement: FormElement = {
@@ -66,7 +68,7 @@ export const DateFieldFormElement: FormElement = {
 };
 
 type CustomInstance = FormElementInstance & {
-  extraAttributes: typeof extraAttributes;
+  extraAttributes: z.infer<typeof propertiesSchema>;
 };
 
 type PropertiesFormSchemaType = z.infer<typeof propertiesSchema>;
@@ -120,14 +122,14 @@ function FormComponent({
     setError(isInvalid === true);
   }, [isInvalid]);
 
-  const { label, required, placeHolder, helperText } = element.extraAttributes;
+  const { label, required, helperText, size } = element.extraAttributes;
+
+  const sizeClass =
+    size === "small" ? "col-span-3" : size === "large" ? "col-span-6" : "col-span-12";
 
   return (
-    <div className="flex w-full flex-col gap-2">
-      <Label className={cn(error && "text-red-500")}>
-        {label}
-        {required && "*"}
-      </Label>
+    <div className={cn("flex w-full flex-col gap-2", sizeClass)}>
+      <Label className={cn(error && "text-red-500")}>{label}{required && "*"}</Label>
       <Popover>
         <PopoverTrigger>
           <Button
@@ -158,14 +160,7 @@ function FormComponent({
         </PopoverContent>
       </Popover>
       {helperText && (
-        <p
-          className={cn(
-            "text-[0.8rem] text-muted-foreground",
-            error && "text-red-500",
-          )}
-        >
-          {helperText}
-        </p>
+        <p className={cn("text-[0.8rem] text-muted-foreground", error && "text-red-500")}>{helperText}</p>
       )}
     </div>
   );
@@ -181,11 +176,7 @@ function PropertiesComponent({
   const form = useForm<PropertiesFormSchemaType>({
     resolver: zodResolver(propertiesSchema),
     mode: "onBlur",
-    defaultValues: {
-      label: element.extraAttributes.label,
-      helperText: element.extraAttributes.helperText,
-      required: element.extraAttributes.required,
-    },
+    defaultValues: element.extraAttributes,
   });
 
   useEffect(() => {
@@ -193,23 +184,15 @@ function PropertiesComponent({
   }, [element, form]);
 
   function applyChanges(values: PropertiesFormSchemaType) {
-    const { label, helperText, required } = values;
     updateElement(element.id, {
       ...element,
-      extraAttributes: {
-        label: label,
-        helperText: helperText,
-        required: required,
-      },
+      extraAttributes: values,
     });
   }
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={(e) => e.preventDefault()}
-        onBlur={form.handleSubmit(applyChanges)}
-      >
+      <form onSubmit={(e) => e.preventDefault()} onBlur={form.handleSubmit(applyChanges)}>
         <FormField
           control={form.control}
           name="label"
@@ -217,19 +200,9 @@ function PropertiesComponent({
             <FormItem>
               <FormLabel htmlFor={field.name}>Label</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                />
+                <Input {...field} />
               </FormControl>
-              <FormDescription>
-                The label of the field. <br />
-                It will be displayed above the field
-              </FormDescription>
+              <FormDescription>The label displayed above the field</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -241,19 +214,9 @@ function PropertiesComponent({
             <FormItem>
               <FormLabel htmlFor={field.name}>Helper text</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                />
+                <Input {...field} />
               </FormControl>
-              <FormDescription>
-                The helper text of the field. <br />
-                It will be displayed below the field
-              </FormDescription>
+              <FormDescription>The text displayed below the field</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -265,16 +228,33 @@ function PropertiesComponent({
             <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
               <div className="space-y-0.5">
                 <FormLabel htmlFor={field.name}>Required</FormLabel>
-                <FormDescription>
-                  The required state of the field.
-                </FormDescription>
+                <FormDescription>Field is mandatory</FormDescription>
               </div>
               <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Size</FormLabel>
+              <FormControl>
+                <select
+                  className="border p-2 rounded w-full"
+                  value={field.value}
+                  onChange={field.onChange}
+                >
+                  <option value="small">Small</option>
+                  <option value="medium">Medium</option>
+                  <option value="large">Large</option>
+                </select>
+              </FormControl>
+              <FormDescription>Choose the width of this field</FormDescription>
               <FormMessage />
             </FormItem>
           )}

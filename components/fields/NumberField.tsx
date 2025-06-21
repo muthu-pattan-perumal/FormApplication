@@ -1,4 +1,3 @@
-// form-elements/NumberField.tsx
 import { Binary, Plus } from "lucide-react";
 import * as z from "zod";
 import {
@@ -13,7 +12,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import useDesigner from "../hooks/useDesigner";
-
 import {
   Form,
   FormControl,
@@ -34,6 +32,7 @@ const propertiesSchema = z.object({
   helperText: z.string().max(50),
   required: z.boolean().default(false),
   placeHolder: z.string().max(50),
+  size: z.enum(["small", "medium", "large"]).default("medium"),
   calculationSteps: z
     .array(
       z.object({
@@ -43,6 +42,19 @@ const propertiesSchema = z.object({
     )
     .optional(),
 });
+
+const getSizeClass = (size: "small" | "medium" | "large" = "medium") => {
+  switch (size) {
+    case "small":
+      return "col-span-3";
+    case "medium":
+      return "col-span-6";
+    case "large":
+      return "col-span-12";
+    default:
+      return "col-span-6";
+  }
+};
 
 export const NumberFieldFormElement: FormElement = {
   type,
@@ -54,6 +66,7 @@ export const NumberFieldFormElement: FormElement = {
       helperText: "Helper text",
       required: false,
       placeHolder: "0",
+      size: "medium",
       calculationSteps: [],
     },
   }),
@@ -79,37 +92,29 @@ type CustomInstance = FormElementInstance & {
 
 type PropertiesFormSchemaType = z.infer<typeof propertiesSchema>;
 
-function DesignerComponent({
-  elementInstance,
-}: {
-  elementInstance: FormElementInstance;
-}) {
+function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const element = elementInstance as CustomInstance;
-  const { label, required, placeHolder, helperText, calculationSteps } =
-    element.extraAttributes;
+  const { label, required, placeHolder, helperText, calculationSteps, size } = element.extraAttributes;
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className={cn("flex w-full flex-col gap-2", getSizeClass(size))}>
       <Label>
         {label}
         {required && "*"}
       </Label>
       <Input readOnly disabled placeholder={placeHolder} />
-      {helperText && (
-        <p className="text-[0.8rem] text-muted-foreground">{helperText}</p>
-      )}
+      {helperText && <p className="text-[0.8rem] text-muted-foreground">{helperText}</p>}
       {calculationSteps?.length ? (
         <p className="text-xs text-gray-400">
-          Calculation: {calculationSteps.map((s, i) => `${i > 0 ? s.operator : ''}${s.fieldId}`).join(' ')}
+          Calculation:{" "}
+          {calculationSteps.map((s, i) => `${i > 0 ? s.operator : ""}${s.fieldId}`).join(" ")}
         </p>
       ) : null}
     </div>
   );
 }
 
-function evaluateCalculation(
-  steps: { fieldId: string; operator?: string }[]
-): string {
+function evaluateCalculation(steps: { fieldId: string; operator?: string }[]): string {
   if (typeof window === "undefined" || !steps?.length) return "";
 
   try {
@@ -138,8 +143,6 @@ function evaluateCalculation(
   }
 }
 
-
-
 function FormComponent({
   elementInstance,
   submitValue,
@@ -154,39 +157,34 @@ function FormComponent({
   const element = elementInstance as CustomInstance;
   const [value, setValue] = useState(defaultValue || "");
   const [error, setError] = useState(false);
-
-  const { label, required, placeHolder, helperText, calculationSteps } =
-    element.extraAttributes;
-
+  const { label, required, placeHolder, helperText, calculationSteps, size } = element.extraAttributes;
   const isCalculated = Array.isArray(calculationSteps) && calculationSteps.length > 0;
 
-useEffect(() => {
-  if (!isCalculated || typeof window === "undefined") return;
+  useEffect(() => {
+    if (!isCalculated || typeof window === "undefined") return;
 
-  const handler = () => {
-    const newValue = evaluateCalculation(calculationSteps);
-    setValue(newValue);
-    if (submitValue) submitValue(element.id, newValue);
-  };
+    const handler = () => {
+      const newValue = evaluateCalculation(calculationSteps);
+      setValue(newValue);
+      if (submitValue) submitValue(element.id, newValue);
+    };
 
-  document.addEventListener("input", handler);
+    document.addEventListener("input", handler);
+    handler();
 
-  // Initial trigger (so value calculates on first load)
-  handler();
-
-  return () => {
-    document.removeEventListener("input", handler);
-  };
-}, [isCalculated, calculationSteps]);
-
+    return () => document.removeEventListener("input", handler);
+  }, [isCalculated, calculationSteps]);
 
   useEffect(() => {
     setError(isInvalid === true);
   }, [isInvalid]);
 
   return (
-    <div className="flex w-full flex-col gap-2">
-      <Label className={cn(error && "text-red-500")}>{label}{required && "*"}</Label>
+    <div className={cn("flex w-full flex-col gap-2", getSizeClass(size))}>
+      <Label className={cn(error && "text-red-500")}>
+        {label}
+        {required && "*"}
+      </Label>
       <Input
         type="number"
         id={element.id}
@@ -210,17 +208,15 @@ useEffect(() => {
         readOnly={isCalculated}
       />
       {helperText && (
-        <p className={cn("text-[0.8rem] text-muted-foreground", error && "text-red-500")}>{helperText}</p>
+        <p className={cn("text-[0.8rem] text-muted-foreground", error && "text-red-500")}>
+          {helperText}
+        </p>
       )}
     </div>
   );
 }
 
-function PropertiesComponent({
-  elementInstance,
-}: {
-  elementInstance: FormElementInstance;
-}) {
+function PropertiesComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const { updateElement, elements } = useDesigner();
   const element = elementInstance as CustomInstance;
   const form = useForm<PropertiesFormSchemaType>({
@@ -239,54 +235,6 @@ function PropertiesComponent({
 
   const calculationSteps = form.watch("calculationSteps") || [];
 
-  const addStep = () => {
-    const newSteps = [
-      ...calculationSteps,
-      {
-        fieldId: "",
-        operator: calculationSteps.length > 0 ? "+" : undefined,
-      },
-    ];
-    form.setValue("calculationSteps", newSteps);
-    updateElement(element.id, {
-      ...element,
-      extraAttributes: {
-        ...element.extraAttributes,
-        calculationSteps: newSteps,
-      },
-    });
-  };
-
-  const updateStep = (
-    index: number,
-    key: "fieldId" | "operator",
-    value: string
-  ) => {
-    const updated = [...calculationSteps];
-    updated[index][key] = value;
-    form.setValue("calculationSteps", updated);
-    updateElement(element.id, {
-      ...element,
-      extraAttributes: {
-        ...element.extraAttributes,
-        calculationSteps: updated,
-      },
-    });
-  };
-
-  const removeStep = (index: number) => {
-    const updated = [...calculationSteps];
-    updated.splice(index, 1);
-    form.setValue("calculationSteps", updated);
-    updateElement(element.id, {
-      ...element,
-      extraAttributes: {
-        ...element.extraAttributes,
-        calculationSteps: updated,
-      },
-    });
-  };
-
   return (
     <Form {...form}>
       <form
@@ -294,10 +242,7 @@ function PropertiesComponent({
         onBlur={form.handleSubmit((values) => {
           updateElement(element.id, {
             ...element,
-            extraAttributes: {
-              ...element.extraAttributes,
-              ...values,
-            },
+            extraAttributes: { ...element.extraAttributes, ...values },
           });
         })}
       >
@@ -339,6 +284,22 @@ function PropertiesComponent({
         />
         <FormField
           control={form.control}
+          name="size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Size</FormLabel>
+              <FormControl>
+                <select {...field} className="w-full border rounded-md px-2 py-1">
+                  <option value="small">Small (col-span-3)</option>
+                  <option value="medium">Medium (col-span-6)</option>
+                  <option value="large">Large (col-span-12)</option>
+                </select>
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="required"
           render={({ field }) => (
             <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
@@ -361,48 +322,68 @@ function PropertiesComponent({
               <FormLabel>Calculation</FormLabel>
               <FormControl>
                 <div className="space-y-4">
-                  <div className="space-y-2 mt-4">
-                    {calculationSteps.map((step, index) => (
-                      <div key={index} className="flex gap-2 items-center">
-                        {index > 0 && (
-                          <select
-                            value={step.operator || "+"}
-                            onChange={(e) => updateStep(index, "operator", e.target.value)}
-                            className="rounded border px-2 py-1"
-                          >
-                            <option value="+">+</option>
-                            <option value="-">-</option>
-                            <option value="*">*</option>
-                            <option value="/">/</option>
-                            <option value="%">%</option>
-                          </select>
-                        )}
+                  {calculationSteps.map((step, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      {index > 0 && (
                         <select
-                          value={step.fieldId}
-                          onChange={(e) => updateStep(index, "fieldId", e.target.value)}
+                          value={step.operator || "+"}
+                          onChange={(e) =>
+                            form.setValue("calculationSteps", [
+                              ...calculationSteps.slice(0, index),
+                              { ...step, operator: e.target.value },
+                              ...calculationSteps.slice(index + 1),
+                            ])
+                          }
                           className="rounded border px-2 py-1"
                         >
-                          <option value="">Select field</option>
-                          {numberFields.map((field) => (
-                            <option key={field.id} value={field.id}>
-                              {(field.extraAttributes as any).label || field.id}
-                            </option>
-                          ))}
+                          <option value="+">+</option>
+                          <option value="-">-</option>
+                          <option value="*">*</option>
+                          <option value="/">/</option>
+                          <option value="%">%</option>
                         </select>
-                        <button
-                          type="button"
-                          className="text-sm text-red-500 hover:underline"
-                          onClick={() => removeStep(index)}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                      <select
+                        value={step.fieldId}
+                        onChange={(e) =>
+                          form.setValue("calculationSteps", [
+                            ...calculationSteps.slice(0, index),
+                            { ...step, fieldId: e.target.value },
+                            ...calculationSteps.slice(index + 1),
+                          ])
+                        }
+                        className="rounded border px-2 py-1"
+                      >
+                        <option value="">Select field</option>
+                        {numberFields.map((field) => (
+                          <option key={field.id} value={field.id}>
+                            {(field.extraAttributes as any).label || field.id}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="text-sm text-red-500 hover:underline"
+                        onClick={() =>
+                          form.setValue("calculationSteps", [
+                            ...calculationSteps.slice(0, index),
+                            ...calculationSteps.slice(index + 1),
+                          ])
+                        }
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={addStep}
+                    onClick={() =>
+                      form.setValue("calculationSteps", [
+                        ...calculationSteps,
+                        { fieldId: "", operator: calculationSteps.length > 0 ? "+" : undefined },
+                      ])
+                    }
                     className="flex gap-2 items-center"
                   >
                     <Plus className="w-4 h-4" /> Add Field/Operator

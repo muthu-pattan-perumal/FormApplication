@@ -82,8 +82,10 @@ function FormSubmitComponent({ formContent, formURL }: Props) {
     <div className="flex h-full w-full items-center justify-center p-8">
       <div
         key={renderKey}
-        className="flex w-full max-w-[620px] flex-grow flex-col gap-4 overflow-y-auto rounded border bg-background p-8 shadow-xl shadow-blue-700"
+        className=" overflow-y-auto rounded border bg-background p-8 shadow-xl shadow-blue-700"
+        style={{width:'100%'}}
       >
+        <div className="grid grid-cols-12 gap-4">
         {formContent.map((element) => {
           const FormElement = FormElements[element.type].formComponent;
           return (
@@ -96,8 +98,8 @@ function FormSubmitComponent({ formContent, formURL }: Props) {
             />
           );
         })}
-
-        <Button onClick={() => startTransition(submitForm)} disabled={pending}>
+</div>
+        <Button onClick={() => startTransition(submitForm)} disabled={pending} style={{margin:'3rem',width:'90%'}}>
           {pending ? (
             <Loader2 className="animate-spin" />
           ) : (

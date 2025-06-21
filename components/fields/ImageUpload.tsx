@@ -29,11 +29,13 @@ const type: ElementsType = "ImageUpload";
 const extraAttributes = {
   label: "Upload Image",
   required: false,
+  size: "medium" as "small" | "medium" | "large",
 };
 
 const propertiesSchema = z.object({
   label: z.string().max(100),
   required: z.boolean().default(false),
+  size: z.enum(["small", "medium", "large"]).default("medium"),
 });
 
 type CustomInstance = FormElementInstance & {
@@ -58,12 +60,22 @@ export const ImageUploadFormElement: FormElement = {
   propertiesComponent: PropertiesComponent,
   validate: (formElement, value) => {
     const element = formElement as CustomInstance;
-    if (element.extraAttributes.required) {
-      return Boolean(value);
-    }
-    return true;
+    return element.extraAttributes.required ? Boolean(value) : true;
   },
 };
+
+function getSizeClass(size: "small" | "medium" | "large") {
+  switch (size) {
+    case "small":
+      return "col-span-3";
+    case "medium":
+      return "col-span-6";
+    case "large":
+      return "col-span-12";
+    default:
+      return "col-span-6";
+  }
+}
 
 function DesignerComponent({
   elementInstance,
@@ -71,9 +83,11 @@ function DesignerComponent({
   elementInstance: FormElementInstance;
 }) {
   const element = elementInstance as CustomInstance;
+  const { label, size } = element.extraAttributes;
+
   return (
-    <div className="flex flex-col gap-2">
-      <Label>{element.extraAttributes.label}</Label>
+    <div className={cn("flex flex-col gap-2", getSizeClass(size))}>
+      <Label>{label}</Label>
       <Input type="file" disabled readOnly />
     </div>
   );
@@ -93,37 +107,39 @@ function FormComponent({
   const element = elementInstance as CustomInstance;
   const [fileUrl, setFileUrl] = useState<string | null>(defaultValue || null);
   const [error, setError] = useState(false);
+  const { label, required, size } = element.extraAttributes;
 
   useEffect(() => {
     setError(isInvalid === true);
   }, [isInvalid]);
 
-const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const base64 = await toBase64(file); // Get base64 string
-  setFileUrl(base64); // Store it in state
+    const base64 = await toBase64(file);
+    setFileUrl(base64);
 
-  const isValid = ImageUploadFormElement.validate(element, base64);
-  setError(!isValid);
-  if (isValid && submitValue) {
-    submitValue(element.id, base64); // Save base64 instead of blob URL
-  }
-};
+    const isValid = ImageUploadFormElement.validate(element, base64);
+    setError(!isValid);
+    if (isValid && submitValue) {
+      submitValue(element.id, base64);
+    }
+  };
 
-const toBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
+  const toBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+
   return (
-    <div className="flex flex-col gap-2">
+    <div className={cn("flex flex-col gap-2", getSizeClass(size))}>
       <Label className={cn(error && "text-red-500")}>
-        {element.extraAttributes.label}
-        {element.extraAttributes.required && "*"}
+        {label}
+        {required && "*"}
       </Label>
       <Input
         type="file"
@@ -132,7 +148,12 @@ const toBase64 = (file: File): Promise<string> =>
         onChange={handleFileChange}
       />
       {fileUrl && (
-        <img src={fileUrl} alt="Uploaded Preview" className="h-32 mt-2 rounded" />
+        <img
+          src={fileUrl}
+          alt="Uploaded Preview"
+          className="w-full mt-2 rounded object-cover"
+        />
+
       )}
     </div>
   );
@@ -149,22 +170,19 @@ function PropertiesComponent({
   const form = useForm<PropertiesFormSchemaType>({
     resolver: zodResolver(propertiesSchema),
     mode: "onBlur",
-    defaultValues: {
-      label: element.extraAttributes.label,
-      required: element.extraAttributes.required,
-    },
+    defaultValues: element.extraAttributes,
   });
 
   useEffect(() => {
     form.reset(element.extraAttributes);
   }, [element, form]);
 
-  function applyChanges(values: PropertiesFormSchemaType) {
+  const applyChanges = (values: PropertiesFormSchemaType) => {
     updateElement(element.id, {
       ...element,
       extraAttributes: values,
     });
-  }
+  };
 
   return (
     <Form {...form}>
@@ -195,6 +213,27 @@ function PropertiesComponent({
               <FormControl>
                 <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Size</FormLabel>
+              <FormControl>
+                <select
+                  {...field}
+                  className="w-full border rounded-md px-2 py-1 bg-background text-foreground"
+                >
+                  <option value="small">Small (col-span-3)</option>
+                  <option value="medium">Medium (col-span-6)</option>
+                  <option value="large">Large (col-span-12)</option>
+                </select>
+              </FormControl>
+              <FormDescription>Width of the image upload field.</FormDescription>
+              <FormMessage />
             </FormItem>
           )}
         />

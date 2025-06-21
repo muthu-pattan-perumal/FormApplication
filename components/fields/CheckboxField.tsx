@@ -27,16 +27,19 @@ import { cn } from "@/lib/utils";
 import { Checkbox } from "../ui/checkbox";
 
 const type: ElementsType = "CheckboxField";
+
 const extraAttributes = {
   label: "Checkbox field",
   helperText: "Helper text",
   required: false,
+  size: "medium" as "small" | "medium" | "large",
 };
 
 const propertiesSchema = z.object({
   label: z.string().max(200),
   helperText: z.string().max(50),
   required: z.boolean().default(false),
+  size: z.enum(["small", "medium", "large"]).default("medium"),
 });
 
 export const CheckboxFieldFormElement: FormElement = {
@@ -63,7 +66,7 @@ export const CheckboxFieldFormElement: FormElement = {
 };
 
 type CustomInstance = FormElementInstance & {
-  extraAttributes: typeof extraAttributes;
+  extraAttributes: z.infer<typeof propertiesSchema>;
 };
 
 type PropertiesFormSchemaType = z.infer<typeof propertiesSchema>;
@@ -74,12 +77,17 @@ function DesignerComponent({
   elementInstance: FormElementInstance;
 }) {
   const element = elementInstance as CustomInstance;
-  const { label, required, helperText } = element.extraAttributes;
+  const { label, required, helperText, size } = element.extraAttributes;
   const id = `checkbox-${element.id}`;
+  const sizeClass = {
+    small: "col-span-3",
+    medium: "col-span-6",
+    large: "col-span-12",
+  }[size];
 
   return (
-    <div className="items-top flex space-x-2">
-      <Checkbox id={id} />
+    <div className={cn("items-top flex space-x-2", sizeClass)}>
+      <Checkbox id={id} disabled  />
       <div className="grid gap-1.5 leading-none">
         <Label htmlFor={id}>
           {label}
@@ -107,45 +115,41 @@ function FormComponent({
   const element = elementInstance as CustomInstance;
   const [value, setValue] = useState<boolean>(defaultValue === "true");
   const [error, setError] = useState(false);
+  const { label, required, helperText, size } = element.extraAttributes;
+  const id = `checkbox-${element.id}`;
+  const sizeClass = {
+    small: "col-span-3",
+    medium: "col-span-6",
+    large: "col-span-12",
+  }[size];
 
   useEffect(() => {
     setError(isInvalid === true);
   }, [isInvalid]);
 
-  const { label, required, helperText } = element.extraAttributes;
-  const id = `checkbox-${element.id}`;
-
   return (
-    <div className="items-top flex space-x-2">
+    <div className={cn("items-top flex space-x-2", sizeClass)} style={{marginTop:"1rem"}}>
       <Checkbox
         id={id}
         checked={value}
         className={cn(error && "border-red-500")}
         onCheckedChange={(value) => {
           setValue(value === true);
-          if (!submitValue) return;
           const valid = CheckboxFieldFormElement.validate(
             element,
-            value ? "true" : "false",
+            value ? "true" : "false"
           );
           setError(!valid);
           submitValue?.(element.id, value.toString());
         }}
       />
       <div className="grid gap-1.5 leading-none">
-        <Label htmlFor={id} className={cn(error && "text-red-500")}>
+        <Label htmlFor={id} className={cn(error && "text-red-500")}> 
           {label}
           {required && "*"}
         </Label>
         {helperText && (
-          <p
-            className={cn(
-              "text-[0.8rem] text-muted-foreground",
-              error && "text-red-500",
-            )}
-          >
-            {helperText}
-          </p>
+          <p className={cn("text-[0.8rem] text-muted-foreground", error && "text-red-500")}>{helperText}</p>
         )}
       </div>
     </div>
@@ -162,11 +166,7 @@ function PropertiesComponent({
   const form = useForm<PropertiesFormSchemaType>({
     resolver: zodResolver(propertiesSchema),
     mode: "onBlur",
-    defaultValues: {
-      label: element.extraAttributes.label,
-      helperText: element.extraAttributes.helperText,
-      required: element.extraAttributes.required,
-    },
+    defaultValues: element.extraAttributes,
   });
 
   useEffect(() => {
@@ -174,14 +174,9 @@ function PropertiesComponent({
   }, [element, form]);
 
   function applyChanges(values: PropertiesFormSchemaType) {
-    const { label, helperText, required } = values;
     updateElement(element.id, {
       ...element,
-      extraAttributes: {
-        label: label,
-        helperText: helperText,
-        required: required,
-      },
+      extraAttributes: values,
     });
   }
 
@@ -196,21 +191,11 @@ function PropertiesComponent({
           name="label"
           render={({ field }) => (
             <FormItem>
-              <FormLabel htmlFor={field.name}>Label</FormLabel>
+              <FormLabel>Label</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                />
+                <Input {...field} />
               </FormControl>
-              <FormDescription>
-                The label of the field. <br />
-                It will be displayed above the field
-              </FormDescription>
+              <FormDescription>This will be shown next to the checkbox.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -221,42 +206,51 @@ function PropertiesComponent({
           name="helperText"
           render={({ field }) => (
             <FormItem>
-              <FormLabel htmlFor={field.name}>Helper text</FormLabel>
+              <FormLabel>Helper text</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                />
+                <Input {...field} />
               </FormControl>
-              <FormDescription>
-                The helper text of the field. <br />
-                It will be displayed below the field
-              </FormDescription>
+              <FormDescription>This will appear below the checkbox.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="required"
           render={({ field }) => (
             <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
               <div className="space-y-0.5">
-                <FormLabel htmlFor={field.name}>Required</FormLabel>
-                <FormDescription>
-                  The required state of the field.
-                </FormDescription>
+                <FormLabel>Required</FormLabel>
+                <FormDescription>Should the field be required?</FormDescription>
               </div>
               <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Size</FormLabel>
+              <FormControl>
+                <select
+                  value={field.value}
+                  onChange={field.onChange}
+                  className="w-full border rounded p-2"
+                >
+                  <option value="small">Small</option>
+                  <option value="medium">Medium</option>
+                  <option value="large">Large</option>
+                </select>
+              </FormControl>
+              <FormDescription>How wide this checkbox should span.</FormDescription>
               <FormMessage />
             </FormItem>
           )}

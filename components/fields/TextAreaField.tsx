@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { Textarea } from "../ui/textarea";
 import { Slider } from "../ui/slider";
 
+// ✅ Type and attributes
 const type: ElementsType = "TextAreaField";
 const extraAttributes = {
   label: "Text area",
@@ -34,14 +35,17 @@ const extraAttributes = {
   required: false,
   placeHolder: "Value here...",
   rows: 3,
+  size: "medium" as "small" | "medium" | "large", // ✅ Added size
 };
 
+// ✅ Schema updated with `size`
 const propertiesSchema = z.object({
   label: z.string().max(200),
   helperText: z.string().max(50),
   required: z.boolean().default(false),
   placeHolder: z.string().max(50),
   rows: z.number().min(1).max(10).default(3),
+  size: z.enum(["small", "medium", "large"]).default("medium"), // ✅ Added
 });
 
 export const TextAreaFieldFormElement: FormElement = {
@@ -73,16 +77,32 @@ type CustomInstance = FormElementInstance & {
 
 type PropertiesFormSchemaType = z.infer<typeof propertiesSchema>;
 
+// ✅ Helper for Tailwind class mapping
+function getSizeClass(size: "small" | "medium" | "large" = "medium") {
+  switch (size) {
+    case "small":
+      return "col-span-3";
+    case "medium":
+      return "col-span-6";
+    case "large":
+      return "col-span-12";
+    default:
+      return "col-span-6";
+  }
+}
+
+// ✅ Updated to include size class
 function DesignerComponent({
   elementInstance,
 }: {
   elementInstance: FormElementInstance;
 }) {
   const element = elementInstance as CustomInstance;
-  const { label, required, placeHolder, helperText } = element.extraAttributes;
+  const { label, required, placeHolder, helperText, size } =
+    element.extraAttributes;
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className={cn("flex flex-col gap-2 w-full", getSizeClass(size))}>
       <Label>
         {label}
         {required && "*"}
@@ -95,6 +115,7 @@ function DesignerComponent({
   );
 }
 
+// ✅ Updated to include size class
 function FormComponent({
   elementInstance,
   submitValue,
@@ -114,11 +135,11 @@ function FormComponent({
     setError(isInvalid === true);
   }, [isInvalid]);
 
-  const { label, required, placeHolder, helperText, rows } =
+  const { label, required, placeHolder, helperText, rows, size } =
     element.extraAttributes;
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className={cn("flex flex-col gap-2 w-full", getSizeClass(size))}>
       <Label className={cn(error && "text-red-500")}>
         {label}
         {required && "*"}
@@ -155,6 +176,7 @@ function FormComponent({
   );
 }
 
+// ✅ Updated to include size field in settings form
 function PropertiesComponent({
   elementInstance,
 }: {
@@ -171,6 +193,7 @@ function PropertiesComponent({
       required: element.extraAttributes.required,
       placeHolder: element.extraAttributes.placeHolder,
       rows: element.extraAttributes.rows,
+      size: element.extraAttributes.size || "medium", // ✅
     },
   });
 
@@ -179,16 +202,9 @@ function PropertiesComponent({
   }, [element, form]);
 
   function applyChanges(values: PropertiesFormSchemaType) {
-    const { label, helperText, required, placeHolder, rows } = values;
     updateElement(element.id, {
       ...element,
-      extraAttributes: {
-        label: label,
-        helperText: helperText,
-        required: required,
-        placeHolder: placeHolder,
-        rows,
-      },
+      extraAttributes: { ...values },
     });
   }
 
@@ -203,21 +219,11 @@ function PropertiesComponent({
           name="label"
           render={({ field }) => (
             <FormItem>
-              <FormLabel htmlFor={field.name}>Label</FormLabel>
+              <FormLabel>Label</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                />
+                <Input {...field} />
               </FormControl>
-              <FormDescription>
-                The label of the field. <br />
-                It will be displayed above the field
-              </FormDescription>
+              <FormDescription>Displayed above the field</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -227,18 +233,11 @@ function PropertiesComponent({
           name="placeHolder"
           render={({ field }) => (
             <FormItem>
-              <FormLabel htmlFor={field.name}>Placeholder</FormLabel>
+              <FormLabel>Placeholder</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                />
+                <Input {...field} />
               </FormControl>
-              <FormDescription>The placeholder of the field.</FormDescription>
+              <FormDescription>Displayed in the field</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -248,18 +247,11 @@ function PropertiesComponent({
           name="helperText"
           render={({ field }) => (
             <FormItem>
-              <FormLabel htmlFor={field.name}>Helper text</FormLabel>
+              <FormLabel>Helper Text</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                />
+                <Input {...field} />
               </FormControl>
-              <FormDescription>The helper text of the field.</FormDescription>
+              <FormDescription>Shown below the field</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -269,16 +261,14 @@ function PropertiesComponent({
           name="rows"
           render={({ field }) => (
             <FormItem>
-              <FormLabel htmlFor={field.name}>
-                Rows {form.watch("rows")}
-              </FormLabel>
+              <FormLabel>Rows ({form.watch("rows")})</FormLabel>
               <FormControl>
                 <Slider
-                  defaultValue={[field.value]}
                   min={1}
                   max={10}
                   step={1}
-                  onValueChange={(value) => field.onChange(value[0])}
+                  defaultValue={[field.value]}
+                  onValueChange={(val) => field.onChange(val[0])}
                 />
               </FormControl>
               <FormMessage />
@@ -291,17 +281,34 @@ function PropertiesComponent({
           render={({ field }) => (
             <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
               <div className="space-y-0.5">
-                <FormLabel htmlFor={field.name}>Required</FormLabel>
-                <FormDescription>
-                  The required state of the field.
-                </FormDescription>
+                <FormLabel>Required</FormLabel>
+                <FormDescription>Make this field mandatory</FormDescription>
               </div>
               <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {/* ✅ Size Field */}
+        <FormField
+          control={form.control}
+          name="size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Size</FormLabel>
+              <FormControl>
+                <select
+                  {...field}
+                  className="w-full border rounded-md px-2 py-1 bg-background text-foreground"
+                >
+                  <option value="small">Small (col-span-3)</option>
+                  <option value="medium">Medium (col-span-6)</option>
+                  <option value="large">Large (col-span-12)</option>
+                </select>
+              </FormControl>
+              <FormDescription>Column span in layout</FormDescription>
               <FormMessage />
             </FormItem>
           )}

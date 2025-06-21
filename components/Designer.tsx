@@ -14,6 +14,21 @@ import { idGenerator } from "@/lib/idGenerator";
 import { Button } from "./ui/button";
 import { Trash2 } from "lucide-react";
 
+// ✅ Helper to map size to Tailwind class
+function getSizeClass(size: string) {
+  console.log(size,'size Of All')
+  switch (size) {
+    case "small":
+      return "col-span-3";
+    case "medium":
+      return "col-span-6";
+    case "large":
+      return "col-span-12";
+    default:
+      return "col-span-12";
+  }
+}
+
 function Designer() {
   const {
     elements,
@@ -41,11 +56,10 @@ function Designer() {
       const droppingSidebarBtnOverDesignerDropArea =
         isDesignerBtnElement && isDroppingOverDesignerDropArea;
 
-      // First check if the user is dropping a sidebar button over the designer drop area
       if (droppingSidebarBtnOverDesignerDropArea) {
         const type = active.data?.current?.type;
         const newElement = FormElements[type as ElementsType].construct(
-          idGenerator(),
+          idGenerator()
         );
         addElement(elements.length, newElement);
         return;
@@ -63,11 +77,10 @@ function Designer() {
       const droppingSidebarBtnOverDesignerElement =
         isDesignerBtnElement && isDroppingOverDesignerElement;
 
-      // Then check if the user is dropping a sidebar button over a designer element
       if (droppingSidebarBtnOverDesignerElement) {
         const type = active.data?.current?.type;
         const newElement = FormElements[type as ElementsType].construct(
-          idGenerator(),
+          idGenerator()
         );
 
         const overId = over.data?.current?.elementId;
@@ -87,13 +100,12 @@ function Designer() {
       const draggingDesignerElementOverAnotherDesignerElement =
         isDroppingOverDesignerElement && isDraggingDesignerElement;
 
-      // Then check if the user is dragging a designer element over another designer element
       if (draggingDesignerElementOverAnotherDesignerElement) {
         const activeId = active.data?.current?.elementId;
         const overId = over.data?.current?.elementId;
 
         const activeElementIndex = elements.findIndex(
-          (el) => el.id === activeId,
+          (el) => el.id === activeId
         );
         const overElementIndex = elements.findIndex((el) => el.id === overId);
 
@@ -123,8 +135,8 @@ function Designer() {
         <div
           ref={droppable.setNodeRef}
           className={cn(
-            "m-auto flex h-full max-w-[920px] flex-1 flex-grow flex-col items-center justify-start overflow-y-auto rounded-xl bg-background",
-            droppable.isOver && "ring-2 ring-primary/20",
+            "grid  gap-2 p-4 overflow-y-auto rounded-xl bg-background",
+            droppable.isOver && "ring-2 ring-primary/20"
           )}
         >
           {!droppable.isOver && elements.length === 0 && (
@@ -138,7 +150,7 @@ function Designer() {
             </div>
           )}
           {elements.length > 0 && (
-            <div className="flex w-full flex-col gap-2 p-4">
+            <div className="grid grid-cols-12 gap-2 p-4">
               {elements.map((element) => (
                 <DesignerElementWrapper key={element.id} element={element} />
               ))}
@@ -186,12 +198,19 @@ function DesignerElementWrapper({ element }: { element: FormElementInstance }) {
 
   if (draggable.isDragging) return null;
 
+  // ✅ Extract size safely from extraAttributes
+  const size =
+    (element.extraAttributes as any)?.size || "large"; // fallback to medium
+
   return (
     <div
       ref={draggable.setNodeRef}
       {...draggable.listeners}
       {...draggable.attributes}
-      className="relative flex h-[120px] flex-col rounded-md text-foreground ring-1 ring-inset ring-accent hover:cursor-pointer"
+      className={cn(
+        "relative rounded-md text-foreground ring-1 ring-inset ring-accent hover:cursor-pointer",
+        getSizeClass(size) // ✅ Apply col-span
+      )}
       onMouseEnter={() => setMouseIsOver(true)}
       onMouseLeave={() => setMouseIsOver(false)}
       onClick={(e) => {
@@ -205,7 +224,7 @@ function DesignerElementWrapper({ element }: { element: FormElementInstance }) {
       />
       <div
         ref={bottomHalf.setNodeRef}
-        className={"absolute bottom-0 h-1/2 w-full rounded-b-md"}
+        className="absolute bottom-0 h-1/2 w-full rounded-b-md"
       />
       {mouseIsOver && (
         <>
@@ -233,7 +252,7 @@ function DesignerElementWrapper({ element }: { element: FormElementInstance }) {
       <div
         className={cn(
           "pointer-events-none flex h-[120px] w-full items-center rounded-md bg-accent/40 px-4 py-2",
-          mouseIsOver && "opacity-30",
+          mouseIsOver && "opacity-30"
         )}
       >
         <DesignerElement elementInstance={element} />

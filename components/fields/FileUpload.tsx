@@ -29,11 +29,13 @@ const type: ElementsType = "FileUpload";
 const extraAttributes = {
   label: "Upload File",
   required: false,
+  size: "medium" as "small" | "medium" | "large",
 };
 
 const propertiesSchema = z.object({
   label: z.string().max(100),
   required: z.boolean().default(false),
+  size: z.enum(["small", "medium", "large"]).default("medium"),
 });
 
 type CustomInstance = FormElementInstance & {
@@ -105,7 +107,7 @@ function FormComponent({
     if (!file) return;
 
     setFileName(file.name);
-    setLoading(true); // Start loading
+    setLoading(true);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -117,8 +119,6 @@ function FormComponent({
       });
 
       const data = await res.json();
-      console.log("✅ Upload result:", data);
-
       if (data.success) {
         const fileUrl = `/api/file/${data.fileId}`;
         setFileLink(fileUrl);
@@ -133,22 +133,23 @@ function FormComponent({
         setError(true);
         console.error("Upload error:", data.error || data.details);
       }
-      setLoading(false);
     } catch (error) {
-      setLoading(false);
       setError(true);
-      console.error("🔥 Upload failed:", error);
+      console.error("Upload failed:", error);
     } finally {
-      setLoading(false); // End loading
+      setLoading(false);
     }
   };
 
+  const sizeClass = {
+    small: "col-span-3",
+    medium: "col-span-6",
+    large: "col-span-12",
+  }[element.extraAttributes.size || "medium"];
+
   return (
-    <div className="flex flex-col gap-2 relative">
-      <Label className={cn(error && "text-red-500")}>
-        {element.extraAttributes.label}
-        {element.extraAttributes.required && "*"}
-      </Label>
+    <div className={cn("flex flex-col gap-2 relative", sizeClass)}>
+      <Label className={cn(error && "text-red-500")}>{element.extraAttributes.label}{element.extraAttributes.required && "*"}</Label>
       <div className="relative">
         <Input
           type="file"
@@ -157,45 +158,18 @@ function FormComponent({
           onChange={handleFileChange}
           disabled={loading}
         />
-
-        {/* Spinner on the right side of input */}
         {loading && (
           <div className="absolute top-1/2 right-3 -translate-y-1/2">
-            <svg
-              className="animate-spin h-5 w-5 text-gray-600"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              />
+            <svg className="animate-spin h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
             </svg>
           </div>
         )}
       </div>
-
-      {fileName && (
-        <p className="text-sm mt-1 text-gray-600 truncate">📄 {fileName}</p>
-      )}
-
+      {fileName && <p className="text-sm mt-1 text-gray-600 truncate">📄 {fileName}</p>}
       {fileLink && (
-        <a
-          href={fileLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 text-sm underline hover:text-blue-800"
-        >
+        <a href={fileLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm underline hover:text-blue-800">
           View Uploaded File
         </a>
       )}
@@ -214,10 +188,7 @@ function PropertiesComponent({
   const form = useForm<PropertiesFormSchemaType>({
     resolver: zodResolver(propertiesSchema),
     mode: "onBlur",
-    defaultValues: {
-      label: element.extraAttributes.label,
-      required: element.extraAttributes.required,
-    },
+    defaultValues: element.extraAttributes,
   });
 
   useEffect(() => {
@@ -260,6 +231,28 @@ function PropertiesComponent({
               <FormControl>
                 <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Size</FormLabel>
+              <FormControl>
+                <select
+                  className="w-full border rounded px-2 py-1"
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value as "small" | "medium" | "large")}
+                >
+                  <option value="small">Small (1 column)</option>
+                  <option value="medium">Medium (2 columns)</option>
+                  <option value="large">Large (3 columns)</option>
+                </select>
+              </FormControl>
+              <FormDescription>Width of this field in the form grid</FormDescription>
+              <FormMessage />
             </FormItem>
           )}
         />

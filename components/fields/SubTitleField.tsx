@@ -11,7 +11,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import useDesigner from "../hooks/useDesigner";
-
 import {
   Form,
   FormControl,
@@ -20,14 +19,19 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form";
+import { cn } from "@/lib/utils"; // ✅ utility for className conditionals
 
+// ✅ Element setup
 const type: ElementsType = "SubTitleField";
 const extraAttributes = {
   title: "SubTitle field",
+  size: "medium" as "small" | "medium" | "large",
 };
 
+// ✅ Schema with size
 const propertiesSchema = z.object({
   title: z.string().min(2).max(100),
+  size: z.enum(["small", "medium", "large"]).default("medium"),
 });
 
 export const SubTitleFieldFormElement: FormElement = {
@@ -53,33 +57,50 @@ type CustomInstance = FormElementInstance & {
 
 type PropertiesFormSchemaType = z.infer<typeof propertiesSchema>;
 
+// ✅ Size helper
+function getSizeClass(size: "small" | "medium" | "large" = "medium") {
+  switch (size) {
+    case "small":
+      return "col-span-3";
+    case "medium":
+      return "col-span-6";
+    case "large":
+      return "col-span-12";
+    default:
+      return "col-span-6";
+  }
+}
+
+// ✅ DesignerComponent
 function DesignerComponent({
   elementInstance,
 }: {
   elementInstance: FormElementInstance;
 }) {
   const element = elementInstance as CustomInstance;
-  const { title } = element.extraAttributes;
+  const { title, size } = element.extraAttributes;
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className={cn("flex flex-col gap-2", getSizeClass(size))}>
       <Label className="text-muted-foreground">SubTitle field</Label>
       <p className="text-lg">{title}</p>
     </div>
   );
 }
 
+// ✅ FormComponent
 function FormComponent({
   elementInstance,
 }: {
   elementInstance: FormElementInstance;
 }) {
   const element = elementInstance as CustomInstance;
-  const { title } = element.extraAttributes;
+  const { title, size } = element.extraAttributes;
 
-  return <p className="text-lg">{title}</p>;
+  return <p className={cn("text-lg", getSizeClass(size))}>{title}</p>;
 }
 
+// ✅ PropertiesComponent
 function PropertiesComponent({
   elementInstance,
 }: {
@@ -87,11 +108,13 @@ function PropertiesComponent({
 }) {
   const { updateElement } = useDesigner();
   const element = elementInstance as CustomInstance;
+
   const form = useForm<PropertiesFormSchemaType>({
     resolver: zodResolver(propertiesSchema),
     mode: "onBlur",
     defaultValues: {
       title: element.extraAttributes.title,
+      size: element.extraAttributes.size || "medium",
     },
   });
 
@@ -100,12 +123,9 @@ function PropertiesComponent({
   }, [element, form]);
 
   function applyChanges(values: PropertiesFormSchemaType) {
-    const { title } = values;
     updateElement(element.id, {
       ...element,
-      extraAttributes: {
-        title,
-      },
+      extraAttributes: { ...values },
     });
   }
 
@@ -130,6 +150,28 @@ function PropertiesComponent({
                     }
                   }}
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* ✅ Size selector */}
+        <FormField
+          control={form.control}
+          name="size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Size</FormLabel>
+              <FormControl>
+                <select
+                  {...field}
+                  className="w-full border rounded-md px-2 py-1 bg-background text-foreground"
+                >
+                  <option value="small">Small (col-span-3)</option>
+                  <option value="medium">Medium (col-span-6)</option>
+                  <option value="large">Large (col-span-12)</option>
+                </select>
               </FormControl>
               <FormMessage />
             </FormItem>

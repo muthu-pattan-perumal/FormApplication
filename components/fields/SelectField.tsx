@@ -42,6 +42,7 @@ const extraAttributes = {
   required: false,
   placeHolder: "Value here...",
   options: [],
+  size: "medium" as "small" | "medium" | "large",
 };
 
 const propertiesSchema = z.object({
@@ -50,6 +51,7 @@ const propertiesSchema = z.object({
   required: z.boolean().default(false),
   placeHolder: z.string().max(50),
   options: z.array(z.string()).default([]),
+  size: z.enum(["small", "medium", "large"]).default("medium"),
 });
 
 export const SelectFieldFormElement: FormElement = {
@@ -75,6 +77,17 @@ export const SelectFieldFormElement: FormElement = {
   },
 };
 
+function getSizeClass(size: "small" | "medium" | "large" = "medium") {
+  switch (size) {
+    case "small":
+      return "col-span-3";
+    case "medium":
+      return "col-span-6";
+    case "large":
+      return "col-span-12";
+  }
+}
+
 type CustomInstance = FormElementInstance & {
   extraAttributes: typeof extraAttributes;
 };
@@ -87,10 +100,11 @@ function DesignerComponent({
   elementInstance: FormElementInstance;
 }) {
   const element = elementInstance as CustomInstance;
-  const { label, required, placeHolder, helperText } = element.extraAttributes;
+  const { label, required, placeHolder, helperText, size } =
+    element.extraAttributes;
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className={cn("flex w-full flex-col gap-2", getSizeClass(size))}>
       <Label>
         {label}
         {required && "*"}
@@ -126,15 +140,12 @@ function FormComponent({
     setError(isInvalid === true);
   }, [isInvalid]);
 
-  const { label, required, placeHolder, helperText, options } =
+  const { label, required, placeHolder, helperText, options, size } =
     element.extraAttributes;
 
   return (
-    <div className="flex w-full flex-col gap-2">
-      <Label className={cn(error && "text-red-500")}>
-        {label}
-        {required && "*"}
-      </Label>
+    <div className={cn("flex w-full flex-col gap-2", getSizeClass(size))}>
+      <Label className={cn(error && "text-red-500")}>{label}{required && "*"}</Label>
       <Select
         defaultValue={value}
         onValueChange={(value) => {
@@ -145,7 +156,7 @@ function FormComponent({
           submitValue?.(element.id, value);
         }}
       >
-        <SelectTrigger className={cn("w-full", error && "border-red-500")}>
+        <SelectTrigger className={cn("w-full", error && "border-red-500")}> 
           <SelectValue placeholder={placeHolder} />
         </SelectTrigger>
         <SelectContent>
@@ -160,7 +171,7 @@ function FormComponent({
         <p
           className={cn(
             "text-[0.8rem] text-muted-foreground",
-            error && "text-red-500",
+            error && "text-red-500"
           )}
         >
           {helperText}
@@ -180,13 +191,7 @@ function PropertiesComponent({
   const form = useForm<PropertiesFormSchemaType>({
     resolver: zodResolver(propertiesSchema),
     mode: "onSubmit",
-    defaultValues: {
-      label: element.extraAttributes.label,
-      helperText: element.extraAttributes.helperText,
-      required: element.extraAttributes.required,
-      placeHolder: element.extraAttributes.placeHolder,
-      options: element.extraAttributes.options,
-    },
+    defaultValues: element.extraAttributes,
   });
 
   useEffect(() => {
@@ -194,16 +199,9 @@ function PropertiesComponent({
   }, [element, form]);
 
   function applyChanges(values: PropertiesFormSchemaType) {
-    const { label, helperText, required, placeHolder, options } = values;
     updateElement(element.id, {
       ...element,
-      extraAttributes: {
-        label: label,
-        helperText: helperText,
-        required: required,
-        placeHolder: placeHolder,
-        options,
-      },
+      extraAttributes: values,
     });
     toast({
       title: "Success",
@@ -215,75 +213,23 @@ function PropertiesComponent({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(applyChanges)}>
-        <FormField
-          control={form.control}
-          name="label"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor={field.name}>Label</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                />
-              </FormControl>
-              <FormDescription>
-                The label of the field. <br />
-                It will be displayed above the field
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="placeHolder"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor={field.name}>Placeholder</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                />
-              </FormControl>
-              <FormDescription>The placeholder of the field.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor={field.name}>Helper text</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.currentTarget.blur();
-                    }
-                  }}
-                />
-              </FormControl>
-              <FormDescription>
-                The helper text of the field. <br />
-                It will be displayed below the field
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {(["label", "placeHolder", "helperText"] as const).map((name) => (
+          <FormField
+            key={name}
+            control={form.control}
+            name={name}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{name}</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        ))}
+
         <Separator />
         <FormField
           control={form.control}
@@ -310,11 +256,11 @@ function PropertiesComponent({
                     className="flex items-center justify-between gap-1"
                   >
                     <Input
-                      placeholder=""
                       value={option}
                       onChange={(e) => {
-                        field.value[idx] = e.target.value;
-                        field.onChange(field.value);
+                        const newOptions = [...field.value];
+                        newOptions[idx] = e.target.value;
+                        field.onChange(newOptions);
                       }}
                     />
                     <Button
@@ -332,15 +278,10 @@ function PropertiesComponent({
                   </div>
                 ))}
               </div>
-
-              <FormDescription>
-                The helper text of the field. <br />
-                It will be displayed below the field
-              </FormDescription>
-              <FormMessage />
             </FormItem>
           )}
         />
+
         <Separator />
         <FormField
           control={form.control}
@@ -348,7 +289,7 @@ function PropertiesComponent({
           render={({ field }) => (
             <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
               <div className="space-y-0.5">
-                <FormLabel htmlFor={field.name}>Required</FormLabel>
+                <FormLabel>Required</FormLabel>
                 <FormDescription>
                   The required state of the field.
                 </FormDescription>
@@ -359,7 +300,27 @@ function PropertiesComponent({
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
-              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Separator />
+        <FormField
+          control={form.control}
+          name="size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Size</FormLabel>
+              <FormControl>
+                <select
+                  {...field}
+                  className="w-full border rounded-md px-2 py-1 bg-background text-foreground"
+                >
+                  <option value="small">Small (col-span-3)</option>
+                  <option value="medium">Medium (col-span-6)</option>
+                  <option value="large">Large (col-span-12)</option>
+                </select>
+              </FormControl>
             </FormItem>
           )}
         />
