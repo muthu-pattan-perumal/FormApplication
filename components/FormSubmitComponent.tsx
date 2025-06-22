@@ -54,6 +54,7 @@ function FormSubmitComponent({ formContent, formURL }: Props) {
     }
 
     try {
+       console.log( "trial")
       const JSONContent = JSON.stringify(formValues.current);
       await SubmitForm(formURL, JSONContent);
       setSubmitted(true);
