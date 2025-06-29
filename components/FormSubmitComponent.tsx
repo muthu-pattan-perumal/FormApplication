@@ -6,19 +6,22 @@ import { Button } from "./ui/button";
 import { useCallback, useRef, useState, useTransition } from "react";
 import { toast } from "./ui/use-toast";
 import { SubmitForm } from "@/actions/form";
-
+import useDesigner from "./hooks/useDesigner";
 interface Props {
   formContent: FormElementInstance[];
   formURL: string;
+    globalSettings: {
+    backgroundColor: string;
+    borderRadius: string;
+  };
 }
 
-function FormSubmitComponent({ formContent, formURL }: Props) {
+function FormSubmitComponent({ formContent, formURL,globalSettings }: Props) {
   const formValues = useRef<{ [key: string]: string }>({});
   const formErrors = useRef<{ [key: string]: boolean }>({});
   const [renderKey, setRenderKey] = useState(new Date().getTime());
   const [submitted, setSubmitted] = useState(false);
   const [pending, startTransition] = useTransition();
-
   const validateForm = useCallback(() => {
     for (const field of formContent) {
       const isValid = FormElements[field.type].validate(
@@ -83,8 +86,9 @@ function FormSubmitComponent({ formContent, formURL }: Props) {
     <div className="flex h-full w-full items-center justify-center p-8">
       <div
         key={renderKey}
-        className=" overflow-y-auto rounded border bg-background p-8 shadow-xl shadow-blue-700"
-        style={{width:'100%'}}
+        className=" overflow-y-auto rounded border  p-8 shadow-xl shadow-blue-700"
+        style={{width:'100%',backgroundColor: globalSettings.backgroundColor,
+          borderRadius: globalSettings.borderRadius,}}
       >
         <div className="grid grid-cols-12 gap-4">
         {formContent.map((element) => {

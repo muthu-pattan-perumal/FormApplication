@@ -137,6 +137,7 @@ function Designer() {
             "grid  gap-2 p-4 overflow-y-auto rounded-xl bg-background",
             droppable.isOver && "ring-2 ring-primary/20"
           )}
+          style={{minHeight:"70vh",maxHeight:'calc(100vh - 180px)'}}
         >
           {!droppable.isOver && elements.length === 0 && (
             <p className="flex flex-grow items-center text-3xl font-bold text-muted-foreground">

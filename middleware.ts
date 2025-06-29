@@ -1,10 +1,28 @@
-import { authMiddleware } from '@clerk/nextjs';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getCurrentUser } from "./lib/auth";
 
-// This example protects all routes including api/trpc routes
-// Please edit this to allow other routes to be public as needed.
-// See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your Middleware
-export default authMiddleware({});
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // Skip auth for /submit/* routes
+  if (pathname.startsWith("/submit")) {
+    return NextResponse.next();
+  }
+
+  // Protect /dashboard/*
+  if (pathname.startsWith("/dashboard")) {
+    const user = await getCurrentUser();
+    if (!user) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/sign-in";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
+  matcher: ["/dashboard/:path*", "/submit/:path*"], // still match /submit to let middleware pass
 };

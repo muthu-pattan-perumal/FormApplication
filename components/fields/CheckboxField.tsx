@@ -33,14 +33,37 @@ const extraAttributes = {
   helperText: "Helper text",
   required: false,
   size: "medium" as "small" | "medium" | "large",
+  customId: "",
+  inputWidth: "100%", // NEW
+  alignment: "left" as "left" | "center" | "right", // NEW
+  color: "#000000",
+  background: "white",
+  borderRadius: "5px",
+  borderColor: "gray",
+  borderWidth: "1px",
 };
 
 const propertiesSchema = z.object({
+  customId: z.string().max(100).optional(),
   label: z.string().max(200),
   helperText: z.string().max(50),
   required: z.boolean().default(false),
   size: z.enum(["small", "medium", "large"]).default("medium"),
+  inputWidth: z.string().default("100%"), // NEW
+  alignment: z.enum(["left", "center", "right"]).default("left"), // NEW
+  color: z.string().optional(),
+  background: z.string().optional(),
+  borderRadius: z.string().optional(),
+  borderColor: z.string().optional(),
+  borderWidth: z.string().optional(),
 });
+function getAlignment(alignment: "left" | "center" | "right") {
+  return {
+    left: "flex-start",
+    center: "center",
+    right: "flex-end",
+  }[alignment];
+}
 
 export const CheckboxFieldFormElement: FormElement = {
   type,
@@ -84,12 +107,32 @@ function DesignerComponent({
     medium: "col-span-6",
     large: "col-span-12",
   }[size];
+  const {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } = element.extraAttributes;
 
+  const style = {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } as React.CSSProperties;
   return (
-    <div className={cn("items-top flex space-x-2", sizeClass)}>
-      <Checkbox id={id} disabled  />
+    <div
+      className={cn("items-top flex space-x-2", sizeClass)}
+      style={{
+        width: element.extraAttributes.inputWidth,
+        alignItems: getAlignment(element.extraAttributes.alignment),
+      }}
+    >
+      <Checkbox id={id} disabled />
       <div className="grid gap-1.5 leading-none">
-        <Label htmlFor={id}>
+        <Label style={{ color: element.extraAttributes.color }}>
           {label}
           {required && "*"}
         </Label>
@@ -126,34 +169,75 @@ function FormComponent({
   useEffect(() => {
     setError(isInvalid === true);
   }, [isInvalid]);
+  const {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } = element.extraAttributes;
 
+  const style = {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } as React.CSSProperties;
   return (
-    <div className={cn("items-top flex space-x-2", sizeClass)} style={{marginTop:"1rem"}}>
-      <Checkbox
-        id={id}
-        checked={value}
-        className={cn(error && "border-red-500")}
-        onCheckedChange={(value) => {
-          setValue(value === true);
-          const valid = CheckboxFieldFormElement.validate(
-            element,
-            value ? "true" : "false"
-          );
-          setError(!valid);
-          submitValue?.(element.id, value.toString());
+
+    <div className={cn("w-full", sizeClass)}>
+      {/* Alignment wrapper */}
+      <div
+        className="flex justify-start"
+        style={{
+          justifyContent: getAlignment(element.extraAttributes.alignment),
         }}
-      />
-      <div className="grid gap-1.5 leading-none">
-        <Label htmlFor={id} className={cn(error && "text-red-500")}> 
-          {label}
-          {required && "*"}
-        </Label>
-        {helperText && (
-          <p className={cn("text-[0.8rem] text-muted-foreground", error && "text-red-500")}>{helperText}</p>
-        )}
+      >
+        {/* Inner block with fixed width */}
+        <div
+          className="items-top flex space-x-2"
+          style={{
+            width: element.extraAttributes.inputWidth,
+            marginTop: "1rem",
+          }}
+        >
+          <Checkbox
+            id={element.extraAttributes.customId || element.id}
+            checked={value}
+            className={cn(error && "border-red-500")}
+            onCheckedChange={(value) => {
+              setValue(value === true);
+              const valid = CheckboxFieldFormElement.validate(
+                element,
+                value ? "true" : "false"
+              );
+              setError(!valid);
+              submitValue?.(element.id, value.toString());
+            }}
+          />
+          <div className="grid gap-1.5 leading-none">
+            <Label htmlFor={id} className={cn(error && "text-red-500")} style={{ color: element.extraAttributes.color }}>
+              {label}
+              {required && "*"}
+            </Label>
+            {helperText && (
+              <p
+                className={cn(
+                  "text-[0.8rem] text-muted-foreground",
+                  error && "text-red-500"
+                )}
+              >
+                {helperText}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
+
   );
+
 }
 
 function PropertiesComponent({
@@ -200,7 +284,22 @@ function PropertiesComponent({
             </FormItem>
           )}
         />
-
+        <FormField
+          control={form.control}
+          name="customId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Custom Field ID</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g., user_email" />
+              </FormControl>
+              <FormDescription>
+                Used for scripting: <code>document.getElementById(...)</code>
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="helperText"
@@ -232,7 +331,108 @@ function PropertiesComponent({
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="inputWidth"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Input Width</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g., 100%, 200px, 50%" />
+              </FormControl>
+              <FormDescription>Custom width for the checkbox container</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
+        <FormField
+          control={form.control}
+          name="alignment"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Alignment</FormLabel>
+              <FormControl>
+                <select
+                  {...field}
+                  className="w-full border rounded p-2"
+                >
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </FormControl>
+              <FormDescription>Align the checkbox group horizontally</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Text Color</FormLabel>
+              <FormControl>
+                <Input type="color" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="background"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Background Color</FormLabel>
+              <FormControl>
+                <Input type="color" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderWidth"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Border Width</FormLabel>
+              <FormControl>
+                <Input type="text" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderColor"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Boredr Color</FormLabel>
+              <FormControl>
+                <Input type="color" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderRadius"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Boreder  Radius</FormLabel>
+              <FormControl>
+                <Input type="text" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="size"

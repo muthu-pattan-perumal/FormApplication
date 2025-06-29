@@ -132,7 +132,7 @@ function FormBuilder({ form }: Props) {
             )}
           </div>
         </nav>
-        <div className="relative flex h-[200px] w-full flex-grow items-center justify-center overflow-y-auto bg-accent bg-[url(/paper.svg)] dark:bg-[url(/paper-dark.svg)]">
+        <div className="relative flex h-[200px] w-full flex-grow items-center justify-center overflow-y-auto bg-accent bg-[url(/paper.svg)] dark:bg-[url(/paper-dark.svg)]" style={{height:'calc(100vh - 180px)'}}>
           <Designer />
         </div>
       </main>

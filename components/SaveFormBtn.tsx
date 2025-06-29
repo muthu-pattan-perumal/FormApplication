@@ -6,13 +6,18 @@ import { useTransition } from "react";
 import useDesigner from "./hooks/useDesigner";
 
 function SaveFormBtn({ id }: { id: number }) {
-  const { elements } = useDesigner();
+  const { elements,globalSettings  } = useDesigner();
   const [loading, startTransition] = useTransition();
 
   const updateFormContent = async () => {
     try {
-      const jsonElements = JSON.stringify(elements);
-      await UpdateFormContent(id, jsonElements);
+      const jsonContent = JSON.stringify({
+        elements,
+        globalSettings, // ⬅️ include globalSettings
+      });
+
+      await UpdateFormContent(id, jsonContent);
+
       toast({
         title: "Success",
         description: "Your form has been saved!",

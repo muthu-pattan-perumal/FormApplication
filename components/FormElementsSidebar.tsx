@@ -21,8 +21,13 @@ function FormElementsSidebar() {
         <p className="col-span-1 my-2 place-self-start text-sm text-muted-foreground md:col-span-2">
           Form elements
         </p>
+        <SidebarBtnElement formElement={FormElements.CardField} />
+        <SidebarBtnElement formElement={FormElements.ImageConstant} />
+        <SidebarBtnElement formElement={FormElements.ScriptButton} />
         <SidebarBtnElement formElement={FormElements.TextField} />
         <SidebarBtnElement formElement={FormElements.ImageUpload} />
+          <SidebarBtnElement formElement={FormElements.ChatBot} />
+        <SidebarBtnElement formElement={FormElements.DataFiller} />
         <SidebarBtnElement formElement={FormElements.FileUpload} />
         <SidebarBtnElement formElement={FormElements.NumberField} />
         <SidebarBtnElement formElement={FormElements.TextAreaField} />

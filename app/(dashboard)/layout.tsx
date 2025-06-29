@@ -1,42 +1,19 @@
 // app/(dashboard)/layout.tsx
 import { ReactNode } from "react";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth"; // ✅ your custom auth method
 import { redirect } from "next/navigation";
-import prisma from "@/lib/prisma";
-import Header from "@/components/Header"; // Contains <UserButton>, 'use client'
+import Header from "@/components/Header";
 
 const Layout = async ({ children }: { children: ReactNode }) => {
-  const { userId } = auth();
+  const user = await getCurrentUser();
 
-  if (!userId) {
+  if (!user) {
     redirect("/sign-in");
   }
 
-  const existingUser = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  if (!existingUser) {
-    // Optional: auto-create the user here instead of redirecting
-    // const clerkUser = await currentUser();
-
-    // if (!clerkUser) {
-      redirect("/unauthorized"); // CORRECT spelling
-
-    // }
-
-    // await prisma.user.create({
-    //   data: {
-    //     id: clerkUser.id,
-    //     email: clerkUser.emailAddresses[0]?.emailAddress ?? "",
-    //     name: `${clerkUser.firstName ?? ""} ${clerkUser.lastName ?? ""}`.trim(),
-    //   },
-    // });
-  }
-
   return (
-    <div className="flex max-h-screen min-h-screen min-w-full flex-col bg-background">
-      <Header />
+    <div className="flex max-h-screen min-h-screen min-w-full flex-col bg-background" style={{width:"100%"}}>
+      <Header user={user} />
       <main className="flex w-full flex-grow">{children}</main>
     </div>
   );

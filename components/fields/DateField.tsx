@@ -35,14 +35,37 @@ const extraAttributes = {
   helperText: "Pick a date",
   required: false,
   size: "medium",
+  customId: "",
+  inputWidth: "100%", // NEW
+  alignment: "left" as "left" | "center" | "right", // NEW
+  color: "#000000",
+  background: "white",
+  borderRadius: "5px",
+  borderColor: "gray",
+  borderWidth: "1px",
 };
 
 const propertiesSchema = z.object({
+  customId: z.string().max(100).optional(),
   label: z.string().max(50),
   helperText: z.string().max(200),
   required: z.boolean().default(false),
   size: z.enum(["small", "medium", "large"]).default("medium"),
+  inputWidth: z.string().default("100%"), // NEW
+  alignment: z.enum(["left", "center", "right"]).default("left"), // NEW
+  color: z.string().optional(),
+  background: z.string().optional(),
+  borderRadius: z.string().optional(),
+  borderColor: z.string().optional(),
+  borderWidth: z.string().optional(),
 });
+function getAlignment(alignment: "left" | "center" | "right") {
+  return {
+    left: "flex-start",
+    center: "center",
+    right: "flex-end",
+  }[alignment];
+}
 
 export const DateFieldFormElement: FormElement = {
   type,
@@ -80,24 +103,51 @@ function DesignerComponent({
 }) {
   const element = elementInstance as CustomInstance;
   const { label, required, helperText } = element.extraAttributes;
+  const {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } = element.extraAttributes;
 
+  const style = {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } as React.CSSProperties;
   return (
-    <div className="flex w-full flex-col gap-2">
-      <Label>
-        {label}
-        {required && "*"}
-      </Label>
-      <Button
-        variant="outline"
-        className="w-full justify-start text-left font-normal"
+    <div className={cn("w-full",)}>
+      {/* Align the whole block (label + input + helper) */}
+      <div
+        className="flex flex-col gap-2"
+        style={{
+          alignItems: getAlignment(element.extraAttributes.alignment),
+        }}
       >
-        <CalendarDays className="mr-2 h-4 w-4" />
-        <span>Pick a date</span>
-      </Button>
-      {helperText && (
-        <p className="text-[0.8rem] text-muted-foreground">{helperText}</p>
-      )}
+        <div style={{ width: element.extraAttributes.inputWidth }}>
+          <Label style={{ color: element.extraAttributes.color }}>
+            {label}
+            {required && "*"}
+          </Label>
+          <Button
+            variant="outline"
+            className="w-full justify-start text-left font-normal"
+            style={{ ...style }}
+          >
+            <CalendarDays className="mr-2 h-4 w-4" />
+            <span>Pick a date</span>
+          </Button>
+          {helperText && (
+            <p className="text-[0.8rem] text-muted-foreground">{helperText}</p>
+          )}
+        </div>
+      </div>
     </div>
+
+
   );
 }
 
@@ -125,43 +175,85 @@ function FormComponent({
   const { label, required, helperText, size } = element.extraAttributes;
   const sizeClass =
     size === "small" ? "col-span-3" : size === "medium" ? "col-span-6" : "col-span-12";
+  const {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } = element.extraAttributes;
 
+  const style = {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } as React.CSSProperties;
   return (
-    <div className={cn("flex w-full flex-col gap-2", sizeClass)}>
-      <Label className={cn(error && "text-red-500")}>{label}{required && "*"}</Label>
-      <Popover>
-        <PopoverTrigger>
-          <Button
-            variant="outline"
-            className={cn(
-              "w-full justify-start text-left font-normal",
-              !date && "text-muted-foreground",
-              error && "border-red-500",
-            )}
-          >
-            <CalendarDays className="mr-2 h-4 w-4" />
-            {date ? format(date, "PP") : <span>Pick a date</span>}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={(date) => {
-              setDate(date);
-              if (!submitValue) return;
-              const value = date?.toUTCString() ?? "";
-              const valid = DateFieldFormElement.validate(element, value);
-              setError(!valid);
-              submitValue(element.id, value);
-            }}
-          />
-        </PopoverContent>
-      </Popover>
-      {helperText && (
-        <p className={cn("text-[0.8rem] text-muted-foreground", error && "text-red-500")}>{helperText}</p>
-      )}
+    <div className={cn("w-full", sizeClass)}>
+      {/* Align the whole block (label + input + helper) */}
+      <div
+        className="flex flex-col gap-2"
+        style={{
+          alignItems: getAlignment(element.extraAttributes.alignment),
+        }}
+      >
+        <div style={{ width: element.extraAttributes.inputWidth }}>
+          {/* Label - always left aligned */}
+          <Label className={cn(error && "text-red-500")} style={{ color: element.extraAttributes.color }}>
+            {label}
+            {required && "*"}
+          </Label>
+
+          {/* Date Picker */}
+          <Popover>
+            <PopoverTrigger>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !date && "text-muted-foreground",
+                  error && "border-red-500"
+                )}
+                style={{ ...style }}
+              >
+                <CalendarDays className="mr-2 h-4 w-4" />
+                {date ? format(date, "PP") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                id={element.extraAttributes.customId || element.id}
+                mode="single"
+                selected={date}
+                onSelect={(date) => {
+                  setDate(date);
+                  if (!submitValue) return;
+                  const value = date?.toUTCString() ?? "";
+                  const valid = DateFieldFormElement.validate(element, value);
+                  setError(!valid);
+                  submitValue(element.id, value);
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* Helper Text - also left aligned under the input */}
+          {helperText && (
+            <p
+              className={cn(
+                "text-[0.8rem] text-muted-foreground",
+                error && "text-red-500"
+              )}
+            >
+              {helperText}
+            </p>
+          )}
+        </div>
+      </div>
     </div>
+
   );
 }
 
@@ -206,6 +298,57 @@ function PropertiesComponent({
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="customId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Custom Field ID</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g., user_email" />
+              </FormControl>
+              <FormDescription>
+                Used for scripting: <code>document.getElementById(...)</code>
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="inputWidth"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Input Width</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g., 100%, 300px" />
+              </FormControl>
+              <FormDescription>Set width like 100%, 300px etc.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="alignment"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Alignment</FormLabel>
+              <FormControl>
+                <select className="border rounded p-2 w-full" {...field}>
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </FormControl>
+              <FormDescription>Horizontal alignment of the field</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="helperText"
@@ -254,6 +397,72 @@ function PropertiesComponent({
                 </select>
               </FormControl>
               <FormDescription>Choose the width of this field</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Text Color</FormLabel>
+              <FormControl>
+                <Input type="color" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="background"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Background Color</FormLabel>
+              <FormControl>
+                <Input type="color" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderWidth"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Border Width</FormLabel>
+              <FormControl>
+                <Input type="text" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderColor"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Boredr Color</FormLabel>
+              <FormControl>
+                <Input type="color" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderRadius"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Boreder  Radius</FormLabel>
+              <FormControl>
+                <Input type="text" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

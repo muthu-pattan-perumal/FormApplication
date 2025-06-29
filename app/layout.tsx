@@ -1,45 +1,35 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-
-import { ClerkProvider } from "@clerk/nextjs";
+// app/layout.tsx
+import './globals.css';
+import { Inter } from 'next/font/google';
+import DesignerContextProvider from '@/components/context/DesignerContext';
 import NextTopLoader from "nextjs-toploader";
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import DesignerContextProvider from "@/components/context/DesignerContext";
 import { Toaster } from "@/components/ui/toaster";
 
-import "./globals.css";
+const inter = Inter({ subsets: ['latin'] });
 
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "Harini",
-  description: "Drag and drop form builder",
+export const metadata = {
+  title: 'My App',
+  description: 'Form Builder App',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>
-          <NextTopLoader />
-          <DesignerContextProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-              <Toaster />
-            </ThemeProvider>
-          </DesignerContextProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        <NextTopLoader />
+        <DesignerContextProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}</ThemeProvider>
+          <Toaster />
+        </DesignerContextProvider>
+      </body>
+    </html>
   );
 }

@@ -18,13 +18,13 @@ export default function ThemeSwitcher() {
   return (
     <Tabs defaultValue={theme} onValueChange={setTheme}>
       <TabsList className="border">
-        <TabsTrigger value="light" onClick={() => setTheme('light')}>
+        <TabsTrigger value="light">
           <SunIcon className="h-[1.2rem] w-[1.2rem]" />
         </TabsTrigger>
-        <TabsTrigger value="dark" onClick={() => setTheme('dark')}>
+        <TabsTrigger value="dark">
           <MoonIcon className="h-[1.2rem] w-[1.2rem] transition-all dark:-rotate-90" />
         </TabsTrigger>
-        <TabsTrigger value="light" onClick={() => setTheme('light')}>
+        <TabsTrigger value="system">
           <Monitor className="h-[1.2rem] w-[1.2rem]" />
         </TabsTrigger>
       </TabsList>

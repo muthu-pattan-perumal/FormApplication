@@ -102,8 +102,14 @@ async function SubmissionsTable({ id }: { id: number }) {
   const form = await GetFormWithSubmissions(id);
 
   if (!form) throw new Error("Form not found");
+const parsed = JSON.parse(form.content);
 
-  const formElements = JSON.parse(form.content) as FormElementInstance[];
+  const formElements = parsed.elements as FormElementInstance[];
+  const globalSettings = parsed.globalSettings ?? {
+    backgroundColor: "#ffffff",
+    borderRadius: "12px",
+  };
+
   const columns: {
     id: string;
     label: string;
@@ -120,6 +126,8 @@ async function SubmissionsTable({ id }: { id: number }) {
       case "SelectField":
       case "CheckboxField":
       case "ImageUpload":
+        case "ChatBot":
+         case "DataFiller":
       case "FileUpload":
         columns.push({
           id: element.id,

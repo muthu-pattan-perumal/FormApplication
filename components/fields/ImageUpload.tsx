@@ -30,12 +30,22 @@ const extraAttributes = {
   label: "Upload Image",
   required: false,
   size: "medium" as "small" | "medium" | "large",
+  color: "#000000",
+  background: "white",
+  borderRadius: "5px",
+  borderColor: "gray",
+  borderWidth: "1px",
 };
 
 const propertiesSchema = z.object({
   label: z.string().max(100),
   required: z.boolean().default(false),
   size: z.enum(["small", "medium", "large"]).default("medium"),
+  color: z.string().optional(),
+  background: z.string().optional(),
+  borderRadius: z.string().optional(),
+  borderColor: z.string().optional(),
+  borderWidth: z.string().optional(),
 });
 
 type CustomInstance = FormElementInstance & {
@@ -84,11 +94,28 @@ function DesignerComponent({
 }) {
   const element = elementInstance as CustomInstance;
   const { label, size } = element.extraAttributes;
+  const {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } = element.extraAttributes;
 
+  const style = {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } as React.CSSProperties;
   return (
     <div className={cn("flex flex-col gap-2", getSizeClass(size))}>
-      <Label>{label}</Label>
-      <Input type="file" disabled readOnly />
+      <Label style={{ color: element.extraAttributes.color }}>
+        {label}
+
+      </Label>
+      <Input type="file" disabled readOnly style={{ ...style }} />
     </div>
   );
 }
@@ -134,10 +161,24 @@ function FormComponent({
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = (error) => reject(error);
     });
+  const {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } = element.extraAttributes;
 
+  const style = {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } as React.CSSProperties;
   return (
     <div className={cn("flex flex-col gap-2", getSizeClass(size))}>
-      <Label className={cn(error && "text-red-500")}>
+      <Label className={cn(error && "text-red-500")} style={{ color: element.extraAttributes.color }}>
         {label}
         {required && "*"}
       </Label>
@@ -146,6 +187,7 @@ function FormComponent({
         accept="image/*"
         className={cn(error && "border-red-500")}
         onChange={handleFileChange}
+        style={{ ...style }}
       />
       {fileUrl && (
         <img
@@ -213,6 +255,72 @@ function PropertiesComponent({
               <FormControl>
                 <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Text Color</FormLabel>
+              <FormControl>
+                <Input type="color" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="background"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Background Color</FormLabel>
+              <FormControl>
+                <Input type="color" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderWidth"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Border Width</FormLabel>
+              <FormControl>
+                <Input type="text" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderColor"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Boredr Color</FormLabel>
+              <FormControl>
+                <Input type="color" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderRadius"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Boreder  Radius</FormLabel>
+              <FormControl>
+                <Input type="text" {...field} />
+              </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />

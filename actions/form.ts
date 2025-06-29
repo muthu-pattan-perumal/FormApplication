@@ -2,12 +2,12 @@
 
 import prisma from "@/lib/prisma";
 import { formSchema, formSchemaType } from "@/schemas/form";
-import { currentUser } from "@clerk/nextjs";
+import { getCurrentUser } from "@/lib/auth";
 
 class UserNotFoundErr extends Error {}
 
 export async function GetFormStats() {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr("User not found");
@@ -39,7 +39,7 @@ export async function CreateForm(data: formSchemaType) {
     throw new Error("Invalid form data");
   }
 
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr("User not found");
@@ -61,7 +61,7 @@ export async function CreateForm(data: formSchemaType) {
 }
 
 export async function GetForms() {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr("User not found");
@@ -78,7 +78,7 @@ export async function GetForms() {
 }
 
 export async function GetFormById(id: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user) {
     throw new UserNotFoundErr("User not found");
   }
@@ -92,7 +92,7 @@ export async function GetFormById(id: number) {
 }
 
 export async function UpdateFormContent(id: number, jsonContent: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr("User not found");
@@ -110,7 +110,7 @@ export async function UpdateFormContent(id: number, jsonContent: string) {
 }
 
 export async function PublishForm(id: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr("User not found");
@@ -163,7 +163,7 @@ export async function SubmitForm(formURL: string, content: string) {
 }
 
 export async function GetFormWithSubmissions(id: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr("User not found");

@@ -2,15 +2,18 @@
 
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { useClerk } from '@clerk/nextjs';
 
 export default function UnauthorizedPage() {
   const router = useRouter();
-  const { signOut } = useClerk();
 
   const handleLogout = async () => {
-    await signOut(); // ⬅️ Signs the user out and clears session
-    router.push('/sign-in'); // Redirect to sign-in
+    // Hit your custom logout endpoint
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+    });
+
+    // Redirect to sign-in page
+    router.push('/sign-in');
   };
 
   return (

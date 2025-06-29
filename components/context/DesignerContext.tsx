@@ -6,60 +6,124 @@ import {
   useState,
   Dispatch,
   SetStateAction,
+  useEffect,
 } from "react";
 import { FormElementInstance } from "../FormElements";
 
-type DesignerContextType = {
+// Define global settings type
+export type GlobalSettings = {
+  backgroundColor: string;
+  borderRadius: string;
+};
+
+export type ElementsContainer = {
   elements: FormElementInstance[];
-  setElements: Dispatch<SetStateAction<FormElementInstance[]>>;
+  globalSettings: GlobalSettings;
+};
+
+type DesignerContextType = {
+  elements: ElementsContainer;
+  setElements: Dispatch<SetStateAction<ElementsContainer>>;
   selectedElement: FormElementInstance | null;
   setSelectedElement: Dispatch<SetStateAction<FormElementInstance | null>>;
   addElement: (idx: number, element: FormElementInstance) => void;
-  removeElement: (idx: string) => void;
-  updateElement: (idx: string, element: FormElementInstance) => void;
+  removeElement: (id: string) => void;
+  updateElement: (id: string, element: FormElementInstance) => void;
+  globalSettings: GlobalSettings;
+  setGlobalSettings: (settings: Partial<GlobalSettings>) => void;
 };
 
 export const DesignerContext = createContext<DesignerContextType | null>(null);
 
+type DesignerProviderProps = {
+  children: ReactNode;
+  initialData?: any; // support both old and new format
+};
+
 export default function DesignerContextProvider({
   children,
-}: {
-  children: ReactNode;
-}) {
-  const [elements, setElements] = useState<FormElementInstance[]>([]);
+  initialData,
+}: DesignerProviderProps) {
+  const [elements, setElements] = useState<ElementsContainer>({
+    elements: [],
+    globalSettings: {
+      backgroundColor: "#ffffff",
+      borderRadius: "12px",
+    },
+  });
+
   const [selectedElement, setSelectedElement] =
     useState<FormElementInstance | null>(null);
 
-  const addElement = (idx: number, element: FormElementInstance) =>
-    setElements((prev) => {
-      const newElements = [...prev];
-      newElements.splice(idx, 0, element);
-      return newElements;
-    });
+  useEffect(() => {
+    if (initialData) {
+      const maybeNested = initialData.elements;
 
-  const removeElement = (idx: string) => {
-    setElements((prev) => prev.filter((element) => element.id !== idx));
+      const normalizedElements = Array.isArray(maybeNested)
+        ? maybeNested
+        : maybeNested?.elements || [];
+
+      const normalizedSettings =
+        maybeNested?.globalSettings ||
+        initialData.globalSettings || {
+          backgroundColor: "#ffffff",
+          borderRadius: "12px",
+        };
+
+      setElements({
+        elements: normalizedElements,
+        globalSettings: normalizedSettings,
+      });
+    }
+  }, [initialData]);
+
+  const addElement = (idx: number, element: FormElementInstance) => {
+    setElements((prev) => {
+      const newElements = [...prev.elements];
+      newElements.splice(idx, 0, element);
+      return { ...prev, elements: newElements };
+    });
   };
 
-  const updateElement = (idx: string, element: FormElementInstance) => {
+  const removeElement = (id: string) => {
+    setElements((prev) => ({
+      ...prev,
+      elements: prev.elements.filter((el) => el.id !== id),
+    }));
+  };
+
+  const updateElement = (id: string, updated: FormElementInstance) => {
     setElements((prev) => {
-      const newElements = [...prev];
-      const idxToUpdate = newElements.findIndex((el) => el.id === idx);
-      newElements.splice(idxToUpdate, 1, element);
-      return newElements;
+      const index = prev.elements.findIndex((el) => el.id === id);
+      if (index === -1) return prev;
+      const newElements = [...prev.elements];
+      newElements[index] = updated;
+      return { ...prev, elements: newElements };
     });
+  };
+
+  const setGlobalSettings = (settings: Partial<GlobalSettings>) => {
+    setElements((prev) => ({
+      ...prev,
+      globalSettings: {
+        ...prev.globalSettings,
+        ...settings,
+      },
+    }));
   };
 
   return (
     <DesignerContext.Provider
       value={{
         elements,
-        selectedElement,
         setElements,
+        selectedElement,
         setSelectedElement,
         addElement,
         removeElement,
         updateElement,
+        globalSettings: elements.globalSettings,
+        setGlobalSettings,
       }}
     >
       {children}

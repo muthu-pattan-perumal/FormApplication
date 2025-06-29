@@ -5,6 +5,11 @@ import { SpacerFieldFormElement } from "./fields/SpacerField";
 import { SubTitleFieldFormElement } from "./fields/SubTitleField";
 import { TextFieldFormElement } from "./fields/TextField";
 import { ImageUploadFormElement } from "./fields/ImageUpload";
+import { ChatBotFormElement } from "./fields/ChatBot";
+import { DataFillerFormElement } from "./fields/DataFiller";
+import { CardFormElement } from "./fields/CardCardField";
+import { ScriptButtonFormElement } from "./fields/ScriptButton";
+import { ImageConstantFormElement } from "./fields/ImageConstant";
 import { FileUploadFormElement } from "./fields/FileUpload";
 import { TextAreaFieldFormElement } from "./fields/TextAreaField";
 import { TitleFieldFormElement } from "./fields/TitleField";
@@ -24,7 +29,12 @@ export type ElementsType =
   | "DateField"
   | "SelectField"
   | "CheckboxField"
-  |"ImageUpload"
+  | "ImageUpload"
+  |"ChatBot"
+  | "ImageConstant"
+  | "CardField"
+  | "ScriptButton"
+  | "DataFiller"
   | "FileUpload";
 
 export type SubmitFunction = (key: string, value: string) => void;
@@ -60,6 +70,11 @@ type FormElementsType = {
 export const FormElements: FormElementsType = {
   TextField: TextFieldFormElement,
   ImageUpload: ImageUploadFormElement,
+  ChatBot:ChatBotFormElement,
+  DataFiller: DataFillerFormElement,
+  ScriptButton: ScriptButtonFormElement,
+  CardField: CardFormElement,
+  ImageConstant: ImageConstantFormElement,
   FileUpload: FileUploadFormElement,
   TitleField: TitleFieldFormElement,
   SubTitleField: SubTitleFieldFormElement,

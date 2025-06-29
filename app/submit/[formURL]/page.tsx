@@ -12,10 +12,20 @@ async function SubmitPage({ params }: Props) {
   const form = await GetFormContentByURL(params.formURL);
   if (!form) throw new Error("Form not found");
 
-  const formContent = JSON.parse(form.content) as FormElementInstance[];
+  const parsed = JSON.parse(form.content);
+
+  const formContent = parsed.elements as FormElementInstance[];
+  const globalSettings = parsed.globalSettings ?? {
+    backgroundColor: "#ffffff",
+    borderRadius: "12px",
+  };
 
   return (
-    <FormSubmitComponent formURL={params.formURL} formContent={formContent} />
+    <FormSubmitComponent
+      formURL={params.formURL}
+      formContent={formContent}
+      globalSettings={globalSettings}
+    />
   );
 }
 

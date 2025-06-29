@@ -36,17 +36,40 @@ const extraAttributes = {
   placeHolder: "Value here...",
   rows: 3,
   size: "medium" as "small" | "medium" | "large", // ✅ Added size
+  customId: "",
+  inputWidth: "100%", // NEW
+  alignment: "left" as "left" | "center" | "right", // NEW
+  color: "#000000",
+   background: "white",
+  borderRadius: "5px",
+  borderColor: "gray",
+  borderWidth: "1px",
 };
 
 // ✅ Schema updated with `size`
 const propertiesSchema = z.object({
+  customId: z.string().max(100).optional(),
   label: z.string().max(200),
   helperText: z.string().max(50),
   required: z.boolean().default(false),
   placeHolder: z.string().max(50),
   rows: z.number().min(1).max(10).default(3),
   size: z.enum(["small", "medium", "large"]).default("medium"), // ✅ Added
+   inputWidth: z.string().default("100%"), // NEW
+  alignment: z.enum(["left", "center", "right"]).default("left"), // NEW
+    color: z.string().optional(),
+      background: z.string().optional(),
+      borderRadius: z.string().optional(),
+      borderColor: z.string().optional(),
+      borderWidth: z.string().optional(),
 });
+function getAlignment(alignment: "left" | "center" | "right") {
+  return {
+    left: "flex-start",
+    center: "center",
+    right: "flex-end",
+  }[alignment];
+}
 
 export const TextAreaFieldFormElement: FormElement = {
   type,
@@ -100,18 +123,40 @@ function DesignerComponent({
   const element = elementInstance as CustomInstance;
   const { label, required, placeHolder, helperText, size } =
     element.extraAttributes;
+const {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } = element.extraAttributes;
 
+  const style = {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } as React.CSSProperties;
   return (
     <div className={cn("flex flex-col gap-2 w-full", getSizeClass(size))}>
-      <Label>
+      <div
+    className="flex flex-col gap-2"
+    style={{
+      alignItems: getAlignment(element.extraAttributes.alignment),
+    }}
+  >
+    <div style={{ width: element.extraAttributes.inputWidth }}>
+
+      <Label style={{color:element.extraAttributes.color}}>
         {label}
         {required && "*"}
       </Label>
-      <Textarea readOnly disabled placeholder={placeHolder} />
+      <Textarea readOnly disabled placeholder={placeHolder} style={style} />
       {helperText && (
         <p className="text-[0.8rem] text-muted-foreground">{helperText}</p>
       )}
-    </div>
+    </div></div></div>
   );
 }
 
@@ -137,14 +182,38 @@ function FormComponent({
 
   const { label, required, placeHolder, helperText, rows, size } =
     element.extraAttributes;
+const {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } = element.extraAttributes;
 
+  const style = {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } as React.CSSProperties;
   return (
-    <div className={cn("flex flex-col gap-2 w-full", getSizeClass(size))}>
-      <Label className={cn(error && "text-red-500")}>
+    <div
+    className={cn("flex w-full flex-col gap-2", getSizeClass(size))}
+    
+   > <div
+    className="flex flex-col gap-2"
+    style={{
+      alignItems: getAlignment(element.extraAttributes.alignment),
+    }}
+  >
+    <div style={{ width: element.extraAttributes.inputWidth }}>
+      <Label className={cn(error && "text-red-500")} style={{color:element.extraAttributes.color}}>
         {label}
         {required && "*"}
       </Label>
       <Textarea
+        id={element.extraAttributes.customId || element.id}
         rows={rows}
         className={cn(error && "border-red-500")}
         placeholder={placeHolder}
@@ -161,6 +230,7 @@ function FormComponent({
           submitValue(element.id, e.target.value);
         }}
         value={value}
+        style={style}
       />
       {helperText && (
         <p
@@ -172,7 +242,7 @@ function FormComponent({
           {helperText}
         </p>
       )}
-    </div>
+    </div></div></div>
   );
 }
 
@@ -230,6 +300,22 @@ function PropertiesComponent({
         />
         <FormField
           control={form.control}
+          name="customId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Custom Field ID</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g., user_email" />
+              </FormControl>
+              <FormDescription>
+                Used for scripting: <code>document.getElementById(...)</code>
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="placeHolder"
           render={({ field }) => (
             <FormItem>
@@ -242,6 +328,41 @@ function PropertiesComponent({
             </FormItem>
           )}
         />
+
+        <FormField
+  control={form.control}
+  name="inputWidth"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Input Width</FormLabel>
+      <FormControl>
+        <Input {...field} placeholder="e.g., 100%, 300px" />
+      </FormControl>
+      <FormDescription>Set width like 100%, 300px etc.</FormDescription>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+
+<FormField
+  control={form.control}
+  name="alignment"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Alignment</FormLabel>
+      <FormControl>
+        <select className="border rounded p-2 w-full" {...field}>
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </select>
+      </FormControl>
+      <FormDescription>Horizontal alignment of the field</FormDescription>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+
         <FormField
           control={form.control}
           name="helperText"
@@ -313,6 +434,74 @@ function PropertiesComponent({
             </FormItem>
           )}
         />
+
+
+           <FormField
+                          control={form.control}
+                          name="color"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Text Color</FormLabel>
+                              <FormControl>
+                                <Input type="color" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                
+                        <FormField
+                          control={form.control}
+                          name="background"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Background Color</FormLabel>
+                              <FormControl>
+                                <Input type="color" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="borderWidth"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Border Width</FormLabel>
+                              <FormControl>
+                                <Input type="text" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="borderColor"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Boredr Color</FormLabel>
+                              <FormControl>
+                                <Input type="color" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="borderRadius"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Boreder  Radius</FormLabel>
+                              <FormControl>
+                                <Input type="text" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
       </form>
     </Form>
   );

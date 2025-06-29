@@ -28,11 +28,19 @@ import { Button } from "../ui/button";
 const type: ElementsType = "NumberField";
 
 const propertiesSchema = z.object({
+  customId: z.string().max(100).optional(),
   label: z.string().max(200),
   helperText: z.string().max(50),
   required: z.boolean().default(false),
   placeHolder: z.string().max(50),
   size: z.enum(["small", "medium", "large"]).default("medium"),
+  inputWidth: z.string().default("100%"), // NEW
+  alignment: z.enum(["left", "center", "right"]).default("left"), // NEW
+  color: z.string().optional(),
+  background: z.string().optional(),
+  borderRadius: z.string().optional(),
+  borderColor: z.string().optional(),
+  borderWidth: z.string().optional(),
   calculationSteps: z
     .array(
       z.object({
@@ -55,6 +63,13 @@ const getSizeClass = (size: "small" | "medium" | "large" = "medium") => {
       return "col-span-6";
   }
 };
+function getAlignment(alignment: "left" | "center" | "right") {
+  return {
+    left: "flex-start",
+    center: "center",
+    right: "flex-end",
+  }[alignment];
+}
 
 export const NumberFieldFormElement: FormElement = {
   type,
@@ -68,6 +83,14 @@ export const NumberFieldFormElement: FormElement = {
       placeHolder: "0",
       size: "medium",
       calculationSteps: [],
+      customId: '',
+      inputWidth: "100%", // NEW
+      alignment: "left" as "left" | "center" | "right", // NEW
+      color: "#000000",
+      background: "white",
+      borderRadius: "5px",
+      borderColor: "gray",
+      borderWidth: "1px",
     },
   }),
   designerBtnElement: {
@@ -95,21 +118,43 @@ type PropertiesFormSchemaType = z.infer<typeof propertiesSchema>;
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const element = elementInstance as CustomInstance;
   const { label, required, placeHolder, helperText, calculationSteps, size } = element.extraAttributes;
+  const {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } = element.extraAttributes;
 
+  const style = {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } as React.CSSProperties;
   return (
     <div className={cn("flex w-full flex-col gap-2", getSizeClass(size))}>
-      <Label>
-        {label}
-        {required && "*"}
-      </Label>
-      <Input readOnly disabled placeholder={placeHolder} />
-      {helperText && <p className="text-[0.8rem] text-muted-foreground">{helperText}</p>}
-      {calculationSteps?.length ? (
-        <p className="text-xs text-gray-400">
-          Calculation:{" "}
-          {calculationSteps.map((s, i) => `${i > 0 ? s.operator : ""}${s.fieldId}`).join(" ")}
-        </p>
-      ) : null}
+      <div
+        className="flex flex-col gap-2"
+        style={{
+          alignItems: getAlignment(element.extraAttributes.alignment),
+        }}
+      >
+        <div style={{ width: element.extraAttributes.inputWidth }}>
+
+          <Label style={{ color: element.extraAttributes.color }}>
+            {label}
+            {required && "*"}
+          </Label>
+          <Input id={element.id} readOnly disabled placeholder={placeHolder} style={{ ...style }} />
+          {helperText && <p className="text-[0.8rem] text-muted-foreground">{helperText}</p>}
+          {calculationSteps?.length ? (
+            <p className="text-xs text-gray-400">
+              Calculation:{" "}
+              {calculationSteps.map((s, i) => `${i > 0 ? s.operator : ""}${s.fieldId}`).join(" ")}
+            </p>
+          ) : null}</div></div>
     </div>
   );
 }
@@ -178,41 +223,67 @@ function FormComponent({
   useEffect(() => {
     setError(isInvalid === true);
   }, [isInvalid]);
+  const {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } = element.extraAttributes;
+
+  const style = {
+    color,
+    background,
+    borderRadius,
+    borderColor,
+    borderWidth,
+  } as React.CSSProperties;
 
   return (
-    <div className={cn("flex w-full flex-col gap-2", getSizeClass(size))}>
-      <Label className={cn(error && "text-red-500")}>
-        {label}
-        {required && "*"}
-      </Label>
-      <Input
-        type="number"
-        id={element.id}
-        className={cn(error && "border-red-500")}
-        placeholder={placeHolder}
-        value={value}
-        onChange={(e) => {
-          const newValue = e.target.value;
-          if (!isCalculated) {
-            setValue(newValue);
-            if (submitValue) submitValue(element.id, newValue);
-          }
-        }}
-        onBlur={(e) => {
-          if (!submitValue || isCalculated) return;
-          const valid = NumberFieldFormElement.validate(element, e.target.value);
-          setError(!valid);
-          if (!valid) return;
-          submitValue(element.id, e.target.value);
-        }}
-        readOnly={isCalculated}
-      />
-      {helperText && (
-        <p className={cn("text-[0.8rem] text-muted-foreground", error && "text-red-500")}>
-          {helperText}
-        </p>
-      )}
-    </div>
+    <div
+      className={cn("flex w-full flex-col gap-2", getSizeClass(size))}
+
+    > <div
+      className="flex flex-col gap-2"
+      style={{
+        alignItems: getAlignment(element.extraAttributes.alignment),
+      }}
+    >
+        <div style={{ width: element.extraAttributes.inputWidth }}>
+
+          <Label className={cn(error && "text-red-500")} style={{ color: element.extraAttributes.color }}>
+            {label}
+            {required && "*"}
+          </Label>
+          <Input
+            type="number"
+            id={element.extraAttributes.customId || element.id}
+            className={cn(error && "border-red-500")}
+            placeholder={placeHolder}
+            value={value}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              if (!isCalculated) {
+                setValue(newValue);
+                if (submitValue) submitValue(element.id, newValue);
+              }
+            }}
+            onBlur={(e) => {
+              if (!submitValue || isCalculated) return;
+              const valid = NumberFieldFormElement.validate(element, e.target.value);
+              setError(!valid);
+              if (!valid) return;
+              submitValue(element.id, e.target.value);
+            }}
+            readOnly={isCalculated}
+            style={{ ...style }}
+          />
+          {helperText && (
+            <p className={cn("text-[0.8rem] text-muted-foreground", error && "text-red-500")}>
+              {helperText}
+            </p>
+          )}
+        </div></div></div>
   );
 }
 
@@ -260,6 +331,22 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
         />
         <FormField
           control={form.control}
+          name="customId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Custom Field ID</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g., user_email" />
+              </FormControl>
+              <FormDescription>
+                Used for scripting: <code>document.getElementById(...)</code>
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="placeHolder"
           render={({ field }) => (
             <FormItem>
@@ -270,6 +357,40 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="inputWidth"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Input Width</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g., 100%, 300px" />
+              </FormControl>
+              <FormDescription>Set width like 100%, 300px etc.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="alignment"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Alignment</FormLabel>
+              <FormControl>
+                <select className="border rounded p-2 w-full" {...field}>
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </FormControl>
+              <FormDescription>Horizontal alignment of the field</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="helperText"
@@ -295,6 +416,72 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
                   <option value="large">Large (col-span-12)</option>
                 </select>
               </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Text Color</FormLabel>
+              <FormControl>
+                <Input type="color" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="background"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Background Color</FormLabel>
+              <FormControl>
+                <Input type="color" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderWidth"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Border Width</FormLabel>
+              <FormControl>
+                <Input type="text" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderColor"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Boredr Color</FormLabel>
+              <FormControl>
+                <Input type="color" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderRadius"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Boreder  Radius</FormLabel>
+              <FormControl>
+                <Input type="text" {...field} />
+              </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
