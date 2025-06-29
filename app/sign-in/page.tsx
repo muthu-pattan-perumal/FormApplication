@@ -70,7 +70,7 @@ export default function SignIn() {
         </button>
 
         <p className="signup-text">
-          Don't have an account? <a href="/sign-up">Sign Up</a>
+          Don&apos;t have an account?  <a href="/sign-up">Sign Up</a>
         </p>
       </div>
     </div>
