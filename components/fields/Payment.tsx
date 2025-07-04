@@ -417,7 +417,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
               <FormLabel>Custom input ID / name</FormLabel>
               <FormControl><Input {...field} placeholder="e.g. perumalUpi" /></FormControl>
               <FormDescription>
-                Use from JS: <code>window.setUPIAmount("perumalUpi", "10")</code>
+                Use from JS: <code>window.setUPIAmount(perumalUpi, 10)</code>
               </FormDescription>
             </FormItem>
           )}
