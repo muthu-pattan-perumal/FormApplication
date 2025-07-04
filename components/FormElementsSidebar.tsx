@@ -26,7 +26,9 @@ function FormElementsSidebar() {
         <SidebarBtnElement formElement={FormElements.ScriptButton} />
         <SidebarBtnElement formElement={FormElements.TextField} />
         <SidebarBtnElement formElement={FormElements.ImageUpload} />
-          <SidebarBtnElement formElement={FormElements.ChatBot} />
+        <SidebarBtnElement formElement={FormElements.DataWatcher} />
+        <SidebarBtnElement formElement={FormElements.UPIPayment} />
+        <SidebarBtnElement formElement={FormElements.ChatBot} />
         <SidebarBtnElement formElement={FormElements.DataFiller} />
         <SidebarBtnElement formElement={FormElements.FileUpload} />
         <SidebarBtnElement formElement={FormElements.NumberField} />

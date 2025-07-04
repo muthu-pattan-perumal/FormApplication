@@ -102,7 +102,7 @@ async function SubmissionsTable({ id }: { id: number }) {
   const form = await GetFormWithSubmissions(id);
 
   if (!form) throw new Error("Form not found");
-const parsed = JSON.parse(form.content);
+  const parsed = JSON.parse(form.content);
 
   const formElements = parsed.elements as FormElementInstance[];
   const globalSettings = parsed.globalSettings ?? {
@@ -126,9 +126,11 @@ const parsed = JSON.parse(form.content);
       case "SelectField":
       case "CheckboxField":
       case "ImageUpload":
-        case "ChatBot":
-         case "DataFiller":
+      case "UPIPayment":
+      case "ChatBot":
+      case "DataFiller":
       case "FileUpload":
+        case "DataWatcher":
         columns.push({
           id: element.id,
           label: element.extraAttributes?.label,
@@ -218,23 +220,23 @@ function RowCell({ type, value }: { type: ElementsType; value: string }) {
         node = <span className="text-red-500 text-sm">No image</span>;
       }
       break;
-case "FileUpload":
-  if (typeof value === "string") {
-    const fileId = value;
-    node = (
-      <a
-        href={`/api/file/${fileId}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-600 underline text-sm hover:text-blue-800"
-      >
-        View Uploaded File
-      </a>
-    );
-  } else {
-    node = <span className="text-red-500 text-sm">No file</span>;
-  }
-  break;
+    case "FileUpload":
+      if (typeof value === "string") {
+        const fileId = value;
+        node = (
+          <a
+            href={`/api/file/${fileId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline text-sm hover:text-blue-800"
+          >
+            View Uploaded File
+          </a>
+        );
+      } else {
+        node = <span className="text-red-500 text-sm">No file</span>;
+      }
+      break;
 
 
   }

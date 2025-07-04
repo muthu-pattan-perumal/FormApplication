@@ -128,7 +128,7 @@ function DesignerComponent({
         }}
       >
         <div style={{ width: element.extraAttributes.inputWidth }}>
-          <Label style={{ color: element.extraAttributes.color }}>
+          <Label style={{ color: element.extraAttributes.color, marginBottom: '0.5rem' }}>
             {label}
             {required && "*"}
           </Label>
@@ -172,43 +172,52 @@ function FormComponent({
     setError(isInvalid === true);
   }, [isInvalid]);
 
-  const { label, required, helperText, size } = element.extraAttributes;
-  const sizeClass =
-    size === "small" ? "col-span-3" : size === "medium" ? "col-span-6" : "col-span-12";
   const {
+    label,
+    required,
+    helperText,
+    size,
     color,
     background,
     borderRadius,
     borderColor,
     borderWidth,
+    alignment,
+    inputWidth,
+    customId,
   } = element.extraAttributes;
 
-  const style = {
+  const sizeClass =
+    size === "small" ? "col-span-3" : size === "medium" ? "col-span-6" : "col-span-12";
+
+  const style: React.CSSProperties = {
     color,
     background,
     borderRadius,
     borderColor,
     borderWidth,
-  } as React.CSSProperties;
+  };
+
   return (
     <div className={cn("w-full", sizeClass)}>
-      {/* Align the whole block (label + input + helper) */}
       <div
         className="flex flex-col gap-2"
         style={{
-          alignItems: getAlignment(element.extraAttributes.alignment),
+          alignItems: getAlignment(alignment),
         }}
       >
-        <div style={{ width: element.extraAttributes.inputWidth }}>
-          {/* Label - always left aligned */}
-          <Label className={cn(error && "text-red-500")} style={{ color: element.extraAttributes.color }}>
-            {label}
-            {required && "*"}
+        <div style={{ width: inputWidth }}>
+          {/* Label above input */}
+          <Label
+            className={cn("block", error && "text-red-500")}
+            style={{ color, marginBottom: '0.5rem' }}
+          >
+            {label} {required && "*"}
           </Label>
 
-          {/* Date Picker */}
+          {/* Input (date picker) */}
           <Popover>
-            <PopoverTrigger>
+            <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 className={cn(
@@ -216,7 +225,8 @@ function FormComponent({
                   !date && "text-muted-foreground",
                   error && "border-red-500"
                 )}
-                style={{ ...style }}
+                style={style}
+                id={customId || element.id}
               >
                 <CalendarDays className="mr-2 h-4 w-4" />
                 {date ? format(date, "PP") : <span>Pick a date</span>}
@@ -224,11 +234,22 @@ function FormComponent({
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
-                id={element.extraAttributes.customId || element.id}
                 mode="single"
                 selected={date}
                 onSelect={(date) => {
                   setDate(date);
+                  if (!date) return;
+                  const adjustedDate = new Date(date.getTime()); // create a copy
+                  adjustedDate.setDate(adjustedDate.getDate() + 1);
+
+                  const dateStr = adjustedDate.toISOString().split("T")[0]; // "YYYY-MM-DD"
+                  console.log("✅ Selected date (+1 fix):", dateStr);
+
+                  const watcher = (window as any)[`__fieldWatchers__${customId || element.id}`];
+                  if (watcher) {
+                    watcher(dateStr);
+                  }
+
                   if (!submitValue) return;
                   const value = date?.toUTCString() ?? "";
                   const valid = DateFieldFormElement.validate(element, value);
@@ -239,11 +260,11 @@ function FormComponent({
             </PopoverContent>
           </Popover>
 
-          {/* Helper Text - also left aligned under the input */}
+          {/* Helper Text */}
           {helperText && (
             <p
               className={cn(
-                "text-[0.8rem] text-muted-foreground",
+                "text-[0.8rem] text-muted-foreground mt-1",
                 error && "text-red-500"
               )}
             >
@@ -253,9 +274,9 @@ function FormComponent({
         </div>
       </div>
     </div>
-
   );
 }
+
 
 function PropertiesComponent({
   elementInstance,

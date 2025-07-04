@@ -175,6 +175,12 @@ function FormComponent({
 }) {
   const element = elementInstance as CustomInstance;
   const [value, setValue] = useState(defaultValue || "");
+
+  // Allow external updates
+  useEffect(() => {
+    setValue(defaultValue || "");
+  }, [defaultValue]);
+
   const [error, setError] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { inputType } = element.extraAttributes;
@@ -233,7 +239,13 @@ function FormComponent({
               value={value}
               className={cn(error && "border-red-500")}
               placeholder={placeHolder}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={(e) => {
+                const watcher = (window as any)[`__fieldWatchers__${element.extraAttributes.customId || element.id}`];
+                if (watcher) {
+                  watcher(e.target.value);
+                }
+                setValue(e.target.value)
+              }}
               onBlur={handleBlur}
               style={{ ...style }}
             />

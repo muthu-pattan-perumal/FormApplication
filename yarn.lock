@@ -1260,6 +1260,13 @@
   resolved "https://registry.npmjs.org/@types/prop-types/-/prop-types-15.7.9.tgz"
   integrity sha512-n1yyPsugYNSmHgxDFjicaI2+gCNjsBck8UX9kuofAKlc0h1bL+20oSF72KeNaW2DUlesbEVCFgyV2dPGTiY42g==
 
+"@types/qrcode.react@^1.0.5":
+  version "1.0.5"
+  resolved "https://registry.npmjs.org/@types/qrcode.react/-/qrcode.react-1.0.5.tgz"
+  integrity sha512-BghPtnlwvrvq8QkGa1H25YnN+5OIgCKFuQruncGWLGJYOzeSKiix/4+B9BtfKF2wf5ja8yfyWYA3OXju995G8w==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-avatar-editor@^13.0.4":
   version "13.0.4"
   resolved "https://registry.npmjs.org/@types/react-avatar-editor/-/react-avatar-editor-13.0.4.tgz"
@@ -3267,6 +3274,11 @@ punycode@^2.1.0:
   resolved "https://registry.npmjs.org/punycode/-/punycode-2.3.0.tgz"
   integrity sha512-rRV+zQD8tVFys26lAGR9WUuS4iUAngJScM+ZRSKtvl5tKeZ2t5bvdNFdNHBW9FWR4guGHlgmsZ1G7BSm2wTbuA==
 
+qr.js@0.0.0:
+  version "0.0.0"
+  resolved "https://registry.npmjs.org/qr.js/-/qr.js-0.0.0.tgz"
+  integrity sha512-c4iYnWb+k2E+vYpRimHqSu575b1/wKl4XFeJGpFmrJQz5I88v9aY2czh7s0w36srfCM1sXgC/xpoJz5dJfq+OQ==
+
 queue-microtask@^1.2.2:
   version "1.2.3"
   resolved "https://registry.npmjs.org/queue-microtask/-/queue-microtask-1.2.3.tgz"
@@ -3315,6 +3327,14 @@ react-is@^16.13.1:
   version "16.13.1"
   resolved "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
+
+react-qr-code@^2.0.16:
+  version "2.0.16"
+  resolved "https://registry.npmjs.org/react-qr-code/-/react-qr-code-2.0.16.tgz"
+  integrity sha512-8f54aTOo7DxYr1LB47pMeclV5SL/zSbJxkXHIS2a+QnAIa4XDVIdmzYRC+CBCJeDLSCeFHn8gHtltwvwZGJD/w==
+  dependencies:
+    prop-types "^15.8.1"
+    qr.js "0.0.0"
 
 react-remove-scroll-bar@^2.3.3:
   version "2.3.4"
@@ -3935,10 +3955,10 @@ yocto-queue@^0.1.0:
   resolved "https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
 
-zod@^3.22.4:
-  version "3.22.4"
-  resolved "https://registry.npmjs.org/zod/-/zod-3.22.4.tgz"
-  integrity sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==
+zod@^3.25.67:
+  version "3.25.67"
+  resolved "https://registry.npmjs.org/zod/-/zod-3.25.67.tgz"
+  integrity sha512-idA2YXwpCdqUSKRCACDE6ItZD9TZzy3OZMtpfLoh6oPR47lipysRrJfjzMqFxQ3uJuUPyUeWe1r9vLH33xO/Qw==
 
 zustand@^5.0.6:
   version "5.0.6"

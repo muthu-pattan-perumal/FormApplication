@@ -5,6 +5,8 @@ import { SpacerFieldFormElement } from "./fields/SpacerField";
 import { SubTitleFieldFormElement } from "./fields/SubTitleField";
 import { TextFieldFormElement } from "./fields/TextField";
 import { ImageUploadFormElement } from "./fields/ImageUpload";
+import { DataWatcherFormElement } from "./fields/DataWatcher";
+import { UPIPaymentFormElement } from "./fields/Payment";
 import { ChatBotFormElement } from "./fields/ChatBot";
 import { DataFillerFormElement } from "./fields/DataFiller";
 import { CardFormElement } from "./fields/CardCardField";
@@ -30,7 +32,9 @@ export type ElementsType =
   | "SelectField"
   | "CheckboxField"
   | "ImageUpload"
-  |"ChatBot"
+  |"DataWatcher"
+  | "UPIPayment"
+  | "ChatBot"
   | "ImageConstant"
   | "CardField"
   | "ScriptButton"
@@ -70,7 +74,9 @@ type FormElementsType = {
 export const FormElements: FormElementsType = {
   TextField: TextFieldFormElement,
   ImageUpload: ImageUploadFormElement,
-  ChatBot:ChatBotFormElement,
+  DataWatcher:DataWatcherFormElement,
+  UPIPayment: UPIPaymentFormElement,
+  ChatBot: ChatBotFormElement,
   DataFiller: DataFillerFormElement,
   ScriptButton: ScriptButtonFormElement,
   CardField: CardFormElement,

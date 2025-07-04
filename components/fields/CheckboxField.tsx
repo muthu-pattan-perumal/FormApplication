@@ -208,6 +208,10 @@ function FormComponent({
             className={cn(error && "border-red-500")}
             onCheckedChange={(value) => {
               setValue(value === true);
+               const watcher = (window as any)[`__fieldWatchers__${element.extraAttributes.customId || element.id}`];
+                if (watcher) {
+                  watcher(value === true);
+                }
               const valid = CheckboxFieldFormElement.validate(
                 element,
                 value ? "true" : "false"

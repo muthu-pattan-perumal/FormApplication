@@ -15,6 +15,7 @@ export default function Header({ user }: { user: UserType }) {
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+localStorage.setItem("user", JSON.stringify(user));
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });

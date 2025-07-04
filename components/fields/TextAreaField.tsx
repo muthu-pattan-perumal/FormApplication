@@ -217,7 +217,13 @@ const {
         rows={rows}
         className={cn(error && "border-red-500")}
         placeholder={placeHolder}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) =>  {
+                const watcher = (window as any)[`__fieldWatchers__${element.extraAttributes.customId || element.id}`];
+                if (watcher) {
+                  watcher(e.target.value);
+                }
+                setValue(e.target.value)
+              }}
         onBlur={(e) => {
           if (!submitValue) return;
 

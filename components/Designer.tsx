@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react"; // already present
 import { useDndMonitor, useDraggable, useDroppable } from "@dnd-kit/core";
 import DesignerSidebar from "./DesignerSidebar";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,46 @@ function Designer() {
     setSelectedElement,
     removeElement,
   } = useDesigner();
+const designer = useDesigner();
+useEffect(() => {
+  if (typeof window !== "undefined") {
+    window.designerContext = {
+      elements: designer.elements,
+      updateElement: designer.updateElement,
+    };
+
+    window.setFieldOptions = (customId, options) => {
+      if (!window.designerContext) return;
+      const elements = window.designerContext.elements || [];
+      const el = elements.find(
+        (e) => (e as any).extraAttributes?.customId === customId
+      );
+      if (!el) return;
+
+      window.designerContext.updateElement(el.id, {
+        ...el,
+        extraAttributes: {
+          ...(el as any).extraAttributes,
+          options,
+        },
+      });
+    };
+window.setFieldValue = (customId, value) => {
+  // Find the DOM element by ID (assuming customId is assigned as DOM ID)
+  const input = document.getElementById(customId) as HTMLInputElement;
+  if (input) {
+    input.value = value;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  // Call watcher if defined
+  const watcher = (window as any)[`__fieldWatchers__${customId}`];
+  if (watcher) watcher(value);
+};
+
+    console.log("✅ designerContext and setFieldOptions ready");
+  }
+}, [designer.elements, designer.updateElement]);
 
   const droppable = useDroppable({
     id: "designer-drop-area",

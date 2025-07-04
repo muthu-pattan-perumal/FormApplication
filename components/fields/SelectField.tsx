@@ -1,3 +1,5 @@
+"use client";
+
 import { PanelTopOpen, Plus, X } from "lucide-react";
 import * as z from "zod";
 import {
@@ -12,15 +14,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import useDesigner from "../hooks/useDesigner";
-
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "../ui/form";
 import { Switch } from "../ui/switch";
 import { cn } from "@/lib/utils";
@@ -31,26 +30,95 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { Separator } from "../ui/separator";
 import { Button } from "../ui/button";
 import { toast } from "../ui/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Checkbox } from "../ui/checkbox";
+
+declare global {
+  interface Window {
+    setFieldOptions?: (
+      customId: string,
+      options: { label: string; value: string; value2?: string }[]
+    ) => void;
+
+    setFieldValue?: (customId: string, value: string) => void;
+
+    designerContext?: {
+      elements: FormElementInstance[];
+      updateElement: (id: string, element: FormElementInstance) => void;
+    };
+  }
+}
+
 
 const type: ElementsType = "SelectField";
+
 const extraAttributes = {
   label: "Select field",
   helperText: "Helper text",
   required: false,
   placeHolder: "Value here...",
-  options: [],
+  options: [] as { label: string; value: string; value2?: string }[],
   size: "medium" as "small" | "medium" | "large",
-  inputWidth: "100%", // NEW
-  alignment: "left" as "left" | "center" | "right", // NEW
-   color: "#000000",
-   background: "white",
+  inputWidth: "100%",
+  alignment: "left" as "left" | "center" | "right",
+  color: "#000000",
+  background: "#ffffff",
   borderRadius: "5px",
-  borderColor: "gray",
+  borderColor: "#cccccc",
   borderWidth: "1px",
+  multiSelect: false,
+  customId: "",
+  targetFieldId: "",
+  targetFieldId2: "",
 };
+
+const propertiesSchema = z.object({
+  label: z.string().max(200),
+  helperText: z.string().max(50),
+  required: z.boolean().default(false),
+  placeHolder: z.string().max(50),
+  options: z.array(z.object({ label: z.string(), value: z.string(), value2: z.string().optional() })).default([]),
+  size: z.enum(["small", "medium", "large"]).default("medium"),
+  inputWidth: z.string().default("100%"),
+  alignment: z.enum(["left", "center", "right"]).default("left"),
+  color: z.string().optional(),
+  background: z.string().optional(),
+  borderRadius: z.string().optional(),
+  borderColor: z.string().optional(),
+  borderWidth: z.string().optional(),
+  multiSelect: z.boolean().default(false),
+  customId: z.string().optional(),
+  targetFieldId: z.string().optional(),
+  targetFieldId2: z.string().optional(),
+});
+
+export const SelectFieldFormElement: FormElement = {
+  type,
+  construct: (id: string) => ({ id, type, extraAttributes }),
+  designerBtnElement: { icon: PanelTopOpen, label: "Select field" },
+  designerComponent: DesignerComponent,
+  formComponent: FormComponent,
+  propertiesComponent: PropertiesComponent,
+  validate: (formElement: FormElementInstance, currentValue: string) => {
+    const element = formElement as CustomInstance;
+    return element.extraAttributes.required ? currentValue.length > 0 : true;
+  },
+};
+
+type CustomInstance = FormElementInstance & {
+  extraAttributes: typeof extraAttributes;
+};
+
+function getSizeClass(size: "small" | "medium" | "large" = "medium") {
+  return {
+    small: "col-span-3",
+    medium: "col-span-6",
+    large: "col-span-12",
+  }[size];
+}
+
 function getAlignment(alignment: "left" | "center" | "right") {
   return {
     left: "flex-start",
@@ -59,109 +127,33 @@ function getAlignment(alignment: "left" | "center" | "right") {
   }[alignment];
 }
 
-const propertiesSchema = z.object({
-  label: z.string().max(200),
-  helperText: z.string().max(50),
-  required: z.boolean().default(false),
-  placeHolder: z.string().max(50),
-  options: z.array(z.string()).default([]),
-  size: z.enum(["small", "medium", "large"]).default("medium"),
-  inputWidth: z.string().default("100%"), // NEW
-  alignment: z.enum(["left", "center", "right"]).default("left"), // NEW
-  color: z.string().optional(),
-    background: z.string().optional(),
-    borderRadius: z.string().optional(),
-    borderColor: z.string().optional(),
-    borderWidth: z.string().optional(),
-});
-
-export const SelectFieldFormElement: FormElement = {
-  type,
-  construct: (id: string) => ({
-    id,
-    type,
-    extraAttributes,
-  }),
-  designerBtnElement: {
-    icon: PanelTopOpen,
-    label: "Select field",
-  },
-  designerComponent: DesignerComponent,
-  formComponent: FormComponent,
-  propertiesComponent: PropertiesComponent,
-  validate: (formElement: FormElementInstance, currentValue: string) => {
-    const element = formElement as CustomInstance;
-    if (element.extraAttributes.required) {
-      return currentValue.length > 0;
-    }
-    return true;
-  },
-};
-
-function getSizeClass(size: "small" | "medium" | "large" = "medium") {
-  switch (size) {
-    case "small":
-      return "col-span-3";
-    case "medium":
-      return "col-span-6";
-    case "large":
-      return "col-span-12";
-  }
-}
-
-type CustomInstance = FormElementInstance & {
-  extraAttributes: typeof extraAttributes;
-};
-
-type PropertiesFormSchemaType = z.infer<typeof propertiesSchema>;
-
-function DesignerComponent({
-  elementInstance,
-}: {
-  elementInstance: FormElementInstance;
-}) {
+function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const element = elementInstance as CustomInstance;
   const { label, required, placeHolder, helperText, size } = element.extraAttributes;
- const {
-    color,
-    background,
-    borderRadius,
-    borderColor,
-    borderWidth,
-  } = element.extraAttributes;
-
   const style = {
-    color,
-    background,
-    borderRadius,
-    borderColor,
-    borderWidth,
+    color: element.extraAttributes.color,
+    background: element.extraAttributes.background,
+    borderRadius: element.extraAttributes.borderRadius,
+    borderColor: element.extraAttributes.borderColor,
+    borderWidth: element.extraAttributes.borderWidth,
   } as React.CSSProperties;
+
   return (
-    <div className={cn("w-full", getSizeClass(size))} >
-      <div
-        className="flex flex-col gap-2"
-        style={{ alignItems: getAlignment(element.extraAttributes.alignment) }}
-      >
+    <div className={cn("w-full", getSizeClass(size))}>
+      <div className="flex flex-col gap-2" style={{ alignItems: getAlignment(element.extraAttributes.alignment) }}>
         <div style={{ width: element.extraAttributes.inputWidth }}>
-          <Label style={{color:element.extraAttributes.color}}>
-            {label}
-            {required && "*"}
-          </Label>
+          <Label style={{ color: element.extraAttributes.color }}>{label} {required && "*"}</Label>
           <Select>
-            <SelectTrigger className="w-full"  style={{ ...style }}>
+            <SelectTrigger className="w-full" style={style}>
               <SelectValue placeholder={placeHolder} />
             </SelectTrigger>
           </Select>
-          {helperText && (
-            <p className="text-[0.8rem] text-muted-foreground">{helperText}</p>
-          )}
+          {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
         </div>
       </div>
     </div>
   );
 }
-
 
 function FormComponent({
   elementInstance,
@@ -177,196 +169,185 @@ function FormComponent({
   const element = elementInstance as CustomInstance;
   const [value, setValue] = useState(defaultValue || "");
   const [error, setError] = useState(false);
-
-  useEffect(() => {
-    setError(isInvalid === true);
-  }, [isInvalid]);
-
-  const { label, required, placeHolder, helperText, options, size } =
-    element.extraAttributes;
-const {
-    color,
-    background,
-    borderRadius,
-    borderColor,
-    borderWidth,
+  const {
+    label,
+    required,
+    placeHolder,
+    helperText,
+    options,
+    size,
+    multiSelect,
+    targetFieldId,
+    targetFieldId2,
   } = element.extraAttributes;
 
+  useEffect(() => setError(isInvalid === true), [isInvalid]);
+
   const style = {
-    color,
-    background,
-    borderRadius,
-    borderColor,
-    borderWidth,
+    color: element.extraAttributes.color,
+    background: element.extraAttributes.background,
+    borderRadius: element.extraAttributes.borderRadius,
+    borderColor: element.extraAttributes.borderColor,
+    borderWidth: element.extraAttributes.borderWidth,
   } as React.CSSProperties;
+
+  const handleSingleChange = (val: string) => {
+    const watcher = (window as any)[`__fieldWatchers__${element.extraAttributes.customId || element.id}`];
+    if (watcher) {
+      watcher(val);
+    }
+    setValue(val);
+    const selected = options.find((o) => o.value === val);
+    submitValue?.(element.id, val);
+    if (targetFieldId && selected) {
+      const input = document.getElementById(targetFieldId) as HTMLInputElement;
+      if (input) input.value = selected.value;
+      submitValue?.(targetFieldId, selected.value);
+    }
+    if (targetFieldId2 && selected) {
+      const input2 = document.getElementById(targetFieldId2) as HTMLInputElement;
+      if (input2) input2.value = selected.value2 || "";
+      submitValue?.(targetFieldId2, selected.value2 || "");
+    }
+  };
+
+  const handleMultiChange = (val: string) => {
+    const currentValues = value.split(",").filter(Boolean);
+    const exists = currentValues.includes(val);
+    const newValues = exists ? currentValues.filter((v) => v !== val) : [...currentValues, val];
+    const finalValue = newValues.join(",");
+    const watcher = (window as any)[`__fieldWatchers__${element.extraAttributes.customId || element.id}`];
+    if (watcher) {
+      watcher(finalValue);
+    }
+    setValue(finalValue);
+    submitValue?.(element.id, finalValue);
+  };
+
   return (
     <div className={cn("w-full", getSizeClass(size))}>
-      <div
-        className="flex flex-col gap-2"
-        style={{ alignItems: getAlignment(element.extraAttributes.alignment) }}
-      >
-        <div style={{ width: element.extraAttributes.inputWidth }}  >
-          <Label className={cn(error && "text-red-500")} style={{color:element.extraAttributes.color}}>
-            {label}
-            {required && "*"}
+      <div className="flex flex-col gap-2" style={{ alignItems: getAlignment(element.extraAttributes.alignment) }}>
+        <div style={{ width: element.extraAttributes.inputWidth }}>
+          <Label className={error ? "text-red-500" : ""} style={{ color: element.extraAttributes.color }}>
+            {label} {required && "*"}
           </Label>
-          <Select
-            defaultValue={value}
-            onValueChange={(value) => {
-              setValue(value);
-              if (!submitValue) return;
-              const valid = SelectFieldFormElement.validate(element, value);
-              setError(!valid);
-              submitValue?.(element.id, value);
-            }}
-          >
-            <SelectTrigger className={cn("w-full", error && "border-red-500")}  style={{ ...style }}>
-              <SelectValue placeholder={placeHolder} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {helperText && (
-            <p className={cn("text-[0.8rem] text-muted-foreground", error && "text-red-500")}>
-              {helperText}
-            </p>
+
+          {multiSelect ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("w-full justify-start", error && "border-red-500")}
+                  id={element.extraAttributes.customId}
+                  style={style}
+                >
+                  {value
+                    .split(",")
+                    .map((val) => options.find((o) => o.value === val)?.label)
+                    .filter(Boolean)
+                    .join(", ") || placeHolder}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] max-h-[300px] overflow-y-auto">
+                <div className="flex flex-col gap-2">
+                  {options.map((opt) => {
+                    const selected = value.split(",").includes(opt.value);
+                    return (
+                      <label
+                        key={opt.value}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={selected}
+                          onCheckedChange={() => handleMultiChange(opt.value)}
+                        />
+                        <span>{opt.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <Select onValueChange={handleSingleChange}>
+              <SelectTrigger className={cn("w-full", error && "border-red-500")} style={style}>
+                <SelectValue id={element.extraAttributes.customId} placeholder={placeHolder} />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
+
+          {helperText && <p className={cn("text-xs", error ? "text-red-500" : "text-muted-foreground")}>{helperText}</p>}
         </div>
       </div>
     </div>
   );
 }
 
-
-function PropertiesComponent({
-  elementInstance,
-}: {
-  elementInstance: FormElementInstance;
-}) {
+function PropertiesComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const element = elementInstance as CustomInstance;
   const { updateElement, setSelectedElement } = useDesigner();
-  const form = useForm<PropertiesFormSchemaType>({
+  const form = useForm<z.infer<typeof propertiesSchema>>({
     resolver: zodResolver(propertiesSchema),
-    mode: "onSubmit",
     defaultValues: element.extraAttributes,
   });
 
-  useEffect(() => {
-    form.reset(element.extraAttributes);
-  }, [element, form]);
+  useEffect(() => form.reset(element.extraAttributes), [element, form]);
 
-  function applyChanges(values: PropertiesFormSchemaType) {
-    updateElement(element.id, {
-      ...element,
-      extraAttributes: values,
-    });
-    toast({
-      title: "Success",
-      description: "Properties saved successfully",
-    });
+  function apply(values: z.infer<typeof propertiesSchema>) {
+    updateElement(element.id, { ...element, extraAttributes: values });
+    toast({ title: "Saved" });
     setSelectedElement(null);
   }
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(applyChanges)}>
-        {(["label", "placeHolder", "helperText"] as const).map((name) => (
+      <form onSubmit={form.handleSubmit(apply)} className="space-y-4">
+        {(["label", "placeHolder", "helperText", "customId", "targetFieldId", "targetFieldId2"] as const).map((key) => (
           <FormField
-            key={name}
+            key={key}
             control={form.control}
-            name={name}
+            name={key}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{name}</FormLabel>
+                <FormLabel>{key}</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
         ))}
 
-        <Separator />
-        <FormField
-          control={form.control}
-          name="options"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center justify-between">
-                <FormLabel>Options</FormLabel>
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    form.setValue("options", field.value.concat("New option"));
-                  }}
-                >
-                  <Plus /> Add
-                </Button>
-              </div>
-              <div className="flex flex-col gap-2">
-                {form.watch("options").map((option, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between gap-1"
-                  >
-                    <Input
-                      value={option}
-                      onChange={(e) => {
-                        const newOptions = [...field.value];
-                        newOptions[idx] = e.target.value;
-                        field.onChange(newOptions);
-                      }}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const newOptions = [...field.value];
-                        newOptions.splice(idx, 1);
-                        field.onChange(newOptions);
-                      }}
-                    >
-                      <X />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </FormItem>
-          )}
-        />
-
-        <Separator />
         <FormField
           control={form.control}
           name="required"
           render={({ field }) => (
-            <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-              <div className="space-y-0.5">
-                <FormLabel>Required</FormLabel>
-                <FormDescription>
-                  The required state of the field.
-                </FormDescription>
-              </div>
+            <FormItem>
+              <FormLabel>Required</FormLabel>
               <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
             </FormItem>
           )}
         />
 
-        <Separator />
+        <FormField
+          control={form.control}
+          name="multiSelect"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Multi Select</FormLabel>
+              <FormControl>
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="size"
@@ -374,31 +355,25 @@ function PropertiesComponent({
             <FormItem>
               <FormLabel>Size</FormLabel>
               <FormControl>
-                <select
-                  {...field}
-                  className="w-full border rounded-md px-2 py-1 bg-background text-foreground"
-                >
-                  <option value="small">Small (col-span-3)</option>
-                  <option value="medium">Medium (col-span-6)</option>
-                  <option value="large">Large (col-span-12)</option>
+                <select {...field} className="input">
+                  <option value="small">Small</option>
+                  <option value="medium">Medium</option>
+                  <option value="large">Large</option>
                 </select>
               </FormControl>
             </FormItem>
           )}
         />
-        <Separator />
 
         <FormField
           control={form.control}
           name="inputWidth"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Input Width</FormLabel>
+              <FormLabel>Width</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="e.g., 100%, 300px" />
+                <Input {...field} />
               </FormControl>
-              <FormDescription>Set width like 100%, 300px etc.</FormDescription>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -410,89 +385,91 @@ function PropertiesComponent({
             <FormItem>
               <FormLabel>Alignment</FormLabel>
               <FormControl>
-                <select className="border rounded p-2 w-full" {...field}>
+                <select {...field} className="input">
                   <option value="left">Left</option>
                   <option value="center">Center</option>
                   <option value="right">Right</option>
                 </select>
               </FormControl>
-              <FormDescription>Horizontal alignment of the field</FormDescription>
-              <FormMessage />
             </FormItem>
           )}
         />
 
-         <FormField
-                  control={form.control}
-                  name="color"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Text Color</FormLabel>
-                      <FormControl>
-                        <Input type="color" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-        
-                <FormField
-                  control={form.control}
-                  name="background"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Background Color</FormLabel>
-                      <FormControl>
-                        <Input type="color" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="borderWidth"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Border Width</FormLabel>
-                      <FormControl>
-                        <Input type="text" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="borderColor"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Boredr Color</FormLabel>
-                      <FormControl>
-                        <Input type="color" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="borderRadius"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Boreder  Radius</FormLabel>
-                      <FormControl>
-                        <Input type="text" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-        <Separator />
-        <Button type="submit" className="w-full">
-          Save
-        </Button>
+        <FormField control={form.control} name="color" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Text Color</FormLabel>
+            <FormControl><Input type="color" {...field} /></FormControl>
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="background" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Background</FormLabel>
+            <FormControl><Input type="color" {...field} /></FormControl>
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="borderRadius" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Border Radius</FormLabel>
+            <FormControl><Input {...field} /></FormControl>
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="borderColor" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Border Color</FormLabel>
+            <FormControl><Input type="color" {...field} /></FormControl>
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="borderWidth" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Border Width</FormLabel>
+            <FormControl><Input {...field} /></FormControl>
+          </FormItem>
+        )} />
+
+        <FormField
+          control={form.control}
+          name="options"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Options</FormLabel>
+              <div className="space-y-2">
+                {field.value.map((opt, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <Input value={opt.label} onChange={(e) => {
+                      const updated = [...field.value];
+                      updated[i].label = e.target.value;
+                      field.onChange(updated);
+                    }} placeholder="Label" />
+                    <Input value={opt.value} onChange={(e) => {
+                      const updated = [...field.value];
+                      updated[i].value = e.target.value;
+                      field.onChange(updated);
+                    }} placeholder="Value" />
+                    <Input value={opt.value2 || ""} onChange={(e) => {
+                      const updated = [...field.value];
+                      updated[i].value2 = e.target.value;
+                      field.onChange(updated);
+                    }} placeholder="Value 2" />
+                    <Button type="button" size="icon" variant="ghost" onClick={() => {
+                      const updated = [...field.value];
+                      updated.splice(i, 1);
+                      field.onChange(updated);
+                    }}><X className="w-4 h-4" /></Button>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" onClick={() => field.onChange([...field.value, { label: "", value: "" }])}>
+                  <Plus className="w-4 h-4 mr-1" /> Add Option
+                </Button>
+              </div>
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit">Save</Button>
       </form>
     </Form>
   );
 }
+
+// Register global function to update options dynamically
+
