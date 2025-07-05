@@ -1,3 +1,5 @@
+// FULL MODIFIED CODE WITH DYNAMIC window.setFieldOptions AND window.setFieldValue SUPPORT
+
 "use client";
 
 import { PanelTopOpen, Plus, X } from "lucide-react";
@@ -37,20 +39,10 @@ import { Checkbox } from "../ui/checkbox";
 
 declare global {
   interface Window {
-    setFieldOptions?: (
-      customId: string,
-      options: { label: string; value: string; value2?: string }[]
-    ) => void;
-
+    setFieldOptions?: (customId: string, options: { label: string; value: string; value2?: string }[]) => void;
     setFieldValue?: (customId: string, value: string) => void;
-
-    designerContext?: {
-      elements: FormElementInstance[];
-      updateElement: (id: string, element: FormElementInstance) => void;
-    };
   }
 }
-
 
 const type: ElementsType = "SelectField";
 
@@ -111,22 +103,6 @@ type CustomInstance = FormElementInstance & {
   extraAttributes: typeof extraAttributes;
 };
 
-function getSizeClass(size: "small" | "medium" | "large" = "medium") {
-  return {
-    small: "col-span-3",
-    medium: "col-span-6",
-    large: "col-span-12",
-  }[size];
-}
-
-function getAlignment(alignment: "left" | "center" | "right") {
-  return {
-    left: "flex-start",
-    center: "center",
-    right: "flex-end",
-  }[alignment];
-}
-
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const element = elementInstance as CustomInstance;
   const { label, required, placeHolder, helperText, size } = element.extraAttributes;
@@ -155,6 +131,22 @@ function DesignerComponent({ elementInstance }: { elementInstance: FormElementIn
   );
 }
 
+function getSizeClass(size: "small" | "medium" | "large") {
+  return {
+    small: "col-span-3",
+    medium: "col-span-6",
+    large: "col-span-12",
+  }[size];
+}
+
+function getAlignment(alignment: "left" | "center" | "right") {
+  return {
+    left: "flex-start",
+    center: "center",
+    right: "flex-end",
+  }[alignment];
+}
+
 function FormComponent({
   elementInstance,
   submitValue,
@@ -168,20 +160,31 @@ function FormComponent({
 }) {
   const element = elementInstance as CustomInstance;
   const [value, setValue] = useState(defaultValue || "");
+  const [options, setOptions] = useState(element.extraAttributes.options || []);
   const [error, setError] = useState(false);
   const {
     label,
     required,
     placeHolder,
     helperText,
-    options,
     size,
     multiSelect,
     targetFieldId,
     targetFieldId2,
+    customId,
   } = element.extraAttributes;
 
   useEffect(() => setError(isInvalid === true), [isInvalid]);
+
+  useEffect(() => {
+    // Register global dynamic updaters
+    window.setFieldOptions = (id, newOptions) => {
+      if (id === customId) setOptions(newOptions);
+    };
+    window.setFieldValue = (id, val) => {
+      if (id === customId) setValue(val);
+    };
+  }, [customId]);
 
   const style = {
     color: element.extraAttributes.color,
@@ -192,13 +195,13 @@ function FormComponent({
   } as React.CSSProperties;
 
   const handleSingleChange = (val: string) => {
-    const watcher = (window as any)[`__fieldWatchers__${element.extraAttributes.customId || element.id}`];
-    if (watcher) {
-      watcher(val);
-    }
     setValue(val);
     const selected = options.find((o) => o.value === val);
     submitValue?.(element.id, val);
+    const watcher = (window as any)[`__fieldWatchers__${customId || element.id}`];
+    if (watcher) {
+      watcher(val);
+    }
     if (targetFieldId && selected) {
       const input = document.getElementById(targetFieldId) as HTMLInputElement;
       if (input) input.value = selected.value;
@@ -216,7 +219,7 @@ function FormComponent({
     const exists = currentValues.includes(val);
     const newValues = exists ? currentValues.filter((v) => v !== val) : [...currentValues, val];
     const finalValue = newValues.join(",");
-    const watcher = (window as any)[`__fieldWatchers__${element.extraAttributes.customId || element.id}`];
+    const watcher = (window as any)[`__fieldWatchers__${customId || element.id}`];
     if (watcher) {
       watcher(finalValue);
     }
@@ -238,7 +241,7 @@ function FormComponent({
                 <Button
                   variant="outline"
                   className={cn("w-full justify-start", error && "border-red-500")}
-                  id={element.extraAttributes.customId}
+                  id={customId}
                   style={style}
                 >
                   {value
@@ -253,10 +256,7 @@ function FormComponent({
                   {options.map((opt) => {
                     const selected = value.split(",").includes(opt.value);
                     return (
-                      <label
-                        key={opt.value}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
+                      <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
                         <Checkbox
                           checked={selected}
                           onCheckedChange={() => handleMultiChange(opt.value)}
@@ -269,19 +269,23 @@ function FormComponent({
               </PopoverContent>
             </Popover>
           ) : (
-            <Select onValueChange={handleSingleChange}>
+            <Select value={value} onValueChange={handleSingleChange}>
               <SelectTrigger className={cn("w-full", error && "border-red-500")} style={style}>
-                <SelectValue id={element.extraAttributes.customId} placeholder={placeHolder} />
+                <SelectValue id={customId} placeholder={placeHolder} />
               </SelectTrigger>
               <SelectContent>
                 {options.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           )}
 
-          {helperText && <p className={cn("text-xs", error ? "text-red-500" : "text-muted-foreground")}>{helperText}</p>}
+          {helperText && (
+            <p className={cn("text-xs", error ? "text-red-500" : "text-muted-foreground")}>{helperText}</p>
+          )}
         </div>
       </div>
     </div>

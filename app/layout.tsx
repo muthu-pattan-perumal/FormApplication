@@ -1,9 +1,11 @@
 // app/layout.tsx
 import './globals.css';
 import { Inter } from 'next/font/google';
-import DesignerContextProvider from '@/components/context/DesignerContext';
-import NextTopLoader from "nextjs-toploader";
+import { getCurrentUser } from "@/lib/auth";
 
+import DesignerContextProvider from '@/components/context/DesignerContext';
+import UserProvider from "@/components/providers/UserProvider";
+import NextTopLoader from "nextjs-toploader";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -14,21 +16,26 @@ export const metadata = {
   description: 'Form Builder App',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await getCurrentUser();
+
   return (
     <html lang="en">
       <body className={inter.className}>
         <NextTopLoader />
-        <DesignerContextProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}</ThemeProvider>
-          <Toaster />
-        </DesignerContextProvider>
+        <UserProvider user={user}>
+          <DesignerContextProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+              <Toaster />
+            </ThemeProvider>
+          </DesignerContextProvider>
+        </UserProvider>
       </body>
     </html>
   );

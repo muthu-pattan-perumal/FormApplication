@@ -20,7 +20,9 @@ import {
 import { format, formatDistance } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-
+import { CheckCircle, XCircle } from "lucide-react";
+import { Pencil } from "lucide-react";
+import EditFormTrigger from "./EditFormTrigger";
 interface Props {
   params: {
     id: string;
@@ -130,7 +132,7 @@ async function SubmissionsTable({ id }: { id: number }) {
       case "ChatBot":
       case "DataFiller":
       case "FileUpload":
-        case "DataWatcher":
+      case "DataWatcher":
         columns.push({
           id: element.id,
           label: element.extraAttributes?.label,
@@ -147,7 +149,7 @@ async function SubmissionsTable({ id }: { id: number }) {
     ...JSON.parse(submission.content),
     submittedAt: submission.createdAt,
   }));
-
+  console.log(rows, 'rowsrows')
   return (
     <>
       <h1 className="my-4 text-2xl font-bold">Submissions</h1>
@@ -163,6 +165,7 @@ async function SubmissionsTable({ id }: { id: number }) {
               <TableHead className="uppercase text-muted-foreground">
                 Submitted at
               </TableHead>
+              <TableHead>Edit</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -179,6 +182,14 @@ async function SubmissionsTable({ id }: { id: number }) {
                   {formatDistance(row.submittedAt, new Date(), {
                     addSuffix: true,
                   })}
+                </TableCell>
+                <TableCell>
+                  <EditFormTrigger
+                    formId={form.id}
+                    submissionId={row.id}
+                    data={row}
+                    formElements={parsed.elements}
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -235,6 +246,28 @@ function RowCell({ type, value }: { type: ElementsType; value: string }) {
         );
       } else {
         node = <span className="text-red-500 text-sm">No file</span>;
+      }
+      break;
+
+    case "UPIPayment":
+      try {
+        const parsed = typeof value === "string" ? JSON.parse(value) : value;
+
+        const isPaid = parsed?.paid === true;
+        const amount = parsed?.amount;
+
+        node = (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium">₹{amount}</span>
+            {isPaid ? (
+              <CheckCircle className="text-green-500 w-4 h-4" />
+            ) : (
+              <XCircle className="text-red-500 w-4 h-4" />
+            )}
+          </div>
+        );
+      } catch (err) {
+        node = <span className="text-red-500 text-sm">Invalid UPI data</span>;
       }
       break;
 

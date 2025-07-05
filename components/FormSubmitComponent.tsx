@@ -1,64 +1,71 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { Loader2, MousePointerClick } from "lucide-react";
 import { FormElementInstance, FormElements } from "./FormElements";
 import { Button } from "./ui/button";
-import { useCallback, useRef, useState, useTransition } from "react";
 import { toast } from "./ui/use-toast";
 import { SubmitForm } from "@/actions/form";
-import useDesigner from "./hooks/useDesigner";
+
 interface Props {
   formContent: FormElementInstance[];
   formURL: string;
-    globalSettings: {
+  globalSettings: {
     backgroundColor: string;
     borderRadius: string;
   };
 }
 
-function FormSubmitComponent({ formContent, formURL,globalSettings }: Props) {
+declare global {
+  interface Window {
+    dispatchEvent: (event: Event) => boolean;
+  }
+}
+
+function FormSubmitComponent({ formContent, formURL, globalSettings }: Props) {
   const formValues = useRef<{ [key: string]: string }>({});
   const formErrors = useRef<{ [key: string]: boolean }>({});
-  const [renderKey, setRenderKey] = useState(new Date().getTime());
+  const [renderKey, setRenderKey] = useState(Date.now());
   const [submitted, setSubmitted] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  // ✅ Collect all values and validate before submit
   const validateForm = useCallback(() => {
+    formErrors.current = {}; // reset error state
     for (const field of formContent) {
-      const isValid = FormElements[field.type].validate(
-        field,
-        formValues.current[field.id] || "",
-      );
+      const val = formValues.current[field.id] ?? "";
+      const isValid = FormElements[field.type]?.validate?.(field, val);
       if (!isValid) {
+        console.log("Error in field", field, val);
         formErrors.current[field.id] = true;
       }
     }
-    if (Object.keys(formErrors.current).length > 0) {
-      return false;
-    }
-    return true;
+    return Object.keys(formErrors.current).length === 0;
   }, [formContent]);
 
+  // ✅ Called by each field to submit its value
   const submitValue = useCallback((key: string, value: string) => {
     formValues.current[key] = value;
   }, []);
 
+  // ✅ Main form submission
   const submitForm = async () => {
-    formErrors.current = {};
-    const validForm = validateForm();
+    const isValid = validateForm();
 
-    if (!validForm) {
-      setRenderKey(new Date().getTime());
+    if (!isValid) {
+      setRenderKey(Date.now()); // trigger re-render to show errors
       toast({
         title: "Error",
-        description: "please check the form for errors",
+        description: "Please check the form for errors",
         variant: "destructive",
       });
       return;
     }
 
     try {
-       console.log( "trial")
       const JSONContent = JSON.stringify(formValues.current);
+      console.log("🔁 Submitting form values:", formValues.current);
+
       await SubmitForm(formURL, JSONContent);
       setSubmitted(true);
     } catch (error) {
@@ -68,6 +75,17 @@ function FormSubmitComponent({ formContent, formURL,globalSettings }: Props) {
       });
     }
   };
+
+  // ✅ Allow external trigger from window.dispatchEvent(new Event("submit-form"))
+  useEffect(() => {
+    const handler = () => {
+      console.log("🚀 submit-form event received");
+      startTransition(submitForm);
+    };
+
+    window.addEventListener("submit-form", handler);
+    return () => window.removeEventListener("submit-form", handler);
+  }, [submitForm]);
 
   if (submitted) {
     return (
@@ -86,25 +104,35 @@ function FormSubmitComponent({ formContent, formURL,globalSettings }: Props) {
     <div className="flex h-full w-full items-center justify-center p-8">
       <div
         key={renderKey}
-        className=" overflow-y-auto rounded border  p-8 shadow-xl shadow-blue-700"
-        style={{width:'100%',backgroundColor: globalSettings.backgroundColor,
-          borderRadius: globalSettings.borderRadius,}}
+        className="overflow-y-auto rounded border p-8 shadow-xl shadow-blue-700"
+        style={{
+          width: "100%",
+          backgroundColor: globalSettings.backgroundColor,
+          borderRadius: globalSettings.borderRadius,
+        }}
       >
         <div className="grid grid-cols-12 gap-4">
-        {formContent.map((element) => {
-          const FormElement = FormElements[element.type].formComponent;
-          return (
-            <FormElement
-              key={element.id}
-              elementInstance={element}
-              submitValue={submitValue}
-              isInvalid={formErrors.current[element.id]}
-              defaultValue={formValues.current[element.id]}
-            />
-          );
-        })}
-</div>
-        <Button onClick={() => startTransition(submitForm)} disabled={pending} style={{margin:'3rem',width:'90%'}}>
+          {formContent.map((element) => {
+            const FormElement = FormElements[element.type]?.formComponent;
+            if (!FormElement) return null;
+
+            return (
+              <FormElement
+                key={element.id}
+                elementInstance={element}
+                submitValue={submitValue}
+                isInvalid={formErrors.current[element.id]}
+                defaultValue={formValues.current[element.id]}
+              />
+            );
+          })}
+        </div>
+
+        <Button
+          onClick={() => startTransition(submitForm)}
+          disabled={pending}
+          style={{ margin: "3rem", width: "90%" }}
+        >
           {pending ? (
             <Loader2 className="animate-spin" />
           ) : (
