@@ -243,7 +243,7 @@ function FormComponent({
                   adjustedDate.setDate(adjustedDate.getDate() + 1);
 
                   const dateStr = adjustedDate.toISOString().split("T")[0]; // "YYYY-MM-DD"
-                  console.log("✅ Selected date (+1 fix):", dateStr);
+                  console.log("✅ Selected date (+1 fix):", dateStr,date);
 
                   const watcher = (window as any)[`__fieldWatchers__${customId || element.id}`];
                   if (watcher) {

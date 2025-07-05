@@ -128,7 +128,7 @@ function FormSubmitComponent({ formContent, formURL, globalSettings }: Props) {
           })}
         </div>
 
-        <Button
+        {/* <Button
           onClick={() => startTransition(submitForm)}
           disabled={pending}
           style={{ margin: "3rem", width: "90%" }}
@@ -140,7 +140,7 @@ function FormSubmitComponent({ formContent, formURL, globalSettings }: Props) {
               <MousePointerClick className="mr-2" /> Submit
             </>
           )}
-        </Button>
+        </Button> */}
       </div>
     </div>
   );
