@@ -148,6 +148,7 @@ async function SubmissionsTable({ id }: { id: number }) {
   const rows: Row[] = form.FormSubmissions.map((submission) => ({
     ...JSON.parse(submission.content),
     submittedAt: submission.createdAt,
+    id:submission.id,
   }));
   console.log(rows, 'rowsrows')
   return (
