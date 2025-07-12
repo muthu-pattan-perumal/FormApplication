@@ -24,7 +24,7 @@ export default function GlobalSettingsDialog({ open, onClose }: Props) {
             <Label>Background Color</Label>
             <Input
               type="color"
-              value={globalSettings.backgroundColor}
+              value={globalSettings?.backgroundColor}
               onChange={(e) => setGlobalSettings({ backgroundColor: e.target.value })}
             />
           </div>
@@ -32,7 +32,7 @@ export default function GlobalSettingsDialog({ open, onClose }: Props) {
             <Label>Border Radius</Label>
             <Input
               type="text"
-              value={globalSettings.borderRadius}
+              value={globalSettings?.borderRadius}
               onChange={(e) => setGlobalSettings({ borderRadius: e.target.value })}
               placeholder="e.g., 12px"
             />

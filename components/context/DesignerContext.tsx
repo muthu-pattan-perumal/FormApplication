@@ -79,7 +79,7 @@ export default function DesignerContextProvider({
 
   const addElement = (idx: number, element: FormElementInstance) => {
     setElements((prev) => {
-      const newElements = [...prev.elements];
+      const newElements = [...(prev?.elements || [])];
       newElements.splice(idx, 0, element);
       return { ...prev, elements: newElements };
     });
@@ -88,15 +88,15 @@ export default function DesignerContextProvider({
   const removeElement = (id: string) => {
     setElements((prev) => ({
       ...prev,
-      elements: prev.elements.filter((el) => el.id !== id),
+      elements: prev?.elements.filter((el) => el.id !== id),
     }));
   };
 
   const updateElement = (id: string, updated: FormElementInstance) => {
     setElements((prev) => {
-      const index = prev.elements.findIndex((el) => el.id === id);
+      const index = prev?.elements.findIndex((el) => el.id === id);
       if (index === -1) return prev;
-      const newElements = [...prev.elements];
+      const newElements = [...(prev?.elements || [])];
       newElements[index] = updated;
       return { ...prev, elements: newElements };
     });
