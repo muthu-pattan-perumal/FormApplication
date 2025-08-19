@@ -14,6 +14,7 @@ import { FormElementInstance } from "../FormElements";
 export type GlobalSettings = {
   backgroundColor: string;
   borderRadius: string;
+  showSubmit:Boolean;
 };
 
 export type ElementsContainer = {
@@ -49,6 +50,7 @@ export default function DesignerContextProvider({
     globalSettings: {
       backgroundColor: "#ffffff",
       borderRadius: "12px",
+      showSubmit:true,
     },
   });
 

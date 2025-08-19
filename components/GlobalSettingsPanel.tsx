@@ -15,7 +15,7 @@ export default function GlobalSettingsDialog({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="backdrop-blur-5 " style={{background:"transparent"}}>
+      <DialogContent className="backdrop-blur-5 " style={{ background: "transparent" }}>
         <DialogHeader>
           <DialogTitle>Global Page Settings</DialogTitle>
         </DialogHeader>
@@ -37,6 +37,19 @@ export default function GlobalSettingsDialog({ open, onClose }: Props) {
               placeholder="e.g., 12px"
             />
           </div>
+
+          <div className="flex items-center gap-2">
+            <Label>Show Submit</Label>
+            <Input
+              type="checkbox"
+              checked={!!globalSettings?.showSubmit}
+              onChange={(e) =>
+                setGlobalSettings({  showSubmit: e.target.checked })
+              }
+              className="h-4 w-4"
+            />
+          </div>
+
         </div>
       </DialogContent>
     </Dialog>
