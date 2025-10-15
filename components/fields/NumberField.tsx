@@ -159,34 +159,73 @@ function DesignerComponent({ elementInstance }: { elementInstance: FormElementIn
   );
 }
 
-function evaluateCalculation(steps: { fieldId: string; operator?: string }[]): string {
+function evaluateCalculation(
+  steps: { fieldId: string; operator?: string }[]
+): string {
   if (typeof window === "undefined" || !steps?.length) return "";
 
   try {
-    const values = steps.map((step) => {
-      const input = document.getElementById(step.fieldId) as HTMLInputElement | null;
-      return input ? parseFloat(input.value || "0") : 0;
-    });
+    // Resolve numeric value for a given identifier by trying multiple selectors
+    const resolveValue = (identifier: string): number => {
+      if (!identifier) return 0;
+      const input =
+        (document.getElementById(identifier) as HTMLInputElement | null) ||
+        document.querySelector<HTMLInputElement>(`[data-custom-id="${identifier}"]`) ||
+        document.querySelector<HTMLInputElement>(`[name="${identifier}"]`);
+      if (!input) return 0;
+      const parsed = parseFloat(input.value ?? "0");
+      return isNaN(parsed) ? 0 : parsed;
+    };
 
-    const expression = steps.reduce((acc, step, idx) => {
-      let operator = idx === 0 ? "" : step.operator || "+";
-      let value = values[idx];
+    // Start with the first value
+    let result = resolveValue(steps[0].fieldId);
 
-      if (operator === "%") {
-        operator = "*";
-        value = value / 100;
+    for (let i = 1; i < steps.length; i++) {
+      const { operator = "+", fieldId } = steps[i];
+      const val = resolveValue(fieldId);
+
+      switch (operator) {
+        case "+":
+          result = result + val;
+          break;
+        case "-":
+          result = result - val;
+          break;
+        case "*":
+          result = result * val;
+          break;
+        case "/":
+          // protect from divide-by-zero: keep result unchanged (or choose other behavior)
+          if (val === 0) {
+            console.warn("Division by zero in calculation step; skipping operation.");
+            // you might prefer result = Infinity or result = 0 — adjust if desired
+          } else {
+            result = result / val;
+          }
+          break;
+        case "%":
+          // Treat % as modulo (remainder) like JS's % operator
+          if (val === 0) {
+            console.warn("Modulo by zero in calculation step; skipping operation.");
+          } else {
+            result = result * (val / 100);
+          }
+          break;
+        default:
+          // fallback to addition for unknown operators
+          result = result + val;
       }
+    }
 
-      return acc + operator + value;
-    }, "");
-
-    const result = eval(expression);
     return isNaN(result) ? "" : result.toString();
   } catch (err) {
     console.error("Calculation error:", err);
     return "";
   }
 }
+
+
+
 
 function FormComponent({
   elementInstance,
@@ -206,6 +245,7 @@ function FormComponent({
   const isCalculated = Array.isArray(calculationSteps) && calculationSteps.length > 0;
 
   useEffect(() => {
+    console.log(calculationSteps, typeof window, "")
     if (!isCalculated || typeof window === "undefined") return;
 
     const handler = () => {
@@ -257,7 +297,9 @@ function FormComponent({
           </Label>
           <Input
             type="number"
-            id={element.extraAttributes.customId || element.id}
+            id={element.id} // always set the instance id as DOM id
+            data-custom-id={element.extraAttributes.customId || undefined}
+            name={element.extraAttributes.customId || element.id} // helpful for querySelector by name
             className={cn(error && "border-red-500")}
             placeholder={placeHolder}
             value={value}
@@ -542,11 +584,17 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
                         className="rounded border px-2 py-1"
                       >
                         <option value="">Select field</option>
-                        {numberFields.map((field) => (
-                          <option key={field.id} value={field.id}>
-                            {(field.extraAttributes as any).label || field.id}
-                          </option>
-                        ))}
+                        {numberFields?.map((field) => {
+                          const custom = (field.extraAttributes as any).customId;
+                          const value = custom && custom.trim() !== "" ? custom : field.id;
+                          const label = (field.extraAttributes as any).label || value;
+                          return (
+                            <option key={field.id} value={value}>
+                              {label}
+                            </option>
+                          );
+                        })}
+
                       </select>
                       <button
                         type="button"
