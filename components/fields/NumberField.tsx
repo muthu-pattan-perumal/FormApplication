@@ -258,7 +258,7 @@ function FormComponent({
     handler();
 
     return () => document.removeEventListener("input", handler);
-  }, [isCalculated, calculationSteps]);
+  }, [isCalculated, calculationSteps, value]);
 
   useEffect(() => {
     setError(isInvalid === true);
@@ -297,7 +297,7 @@ function FormComponent({
           </Label>
           <Input
             type="number"
-            id={element.id} // always set the instance id as DOM id
+            id={element.extraAttributes.customId || element.id} // always set the instance id as DOM id
             data-custom-id={element.extraAttributes.customId || undefined}
             name={element.extraAttributes.customId || element.id} // helpful for querySelector by name
             className={cn(error && "border-red-500")}
@@ -371,22 +371,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="customId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Custom Field ID</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="e.g., user_email" />
-              </FormControl>
-              <FormDescription>
-                Used for scripting: <code>document.getElementById(...)</code>
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
         <FormField
           control={form.control}
           name="placeHolder"
@@ -399,6 +384,22 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
             </FormItem>
           )}
         />
+
+
+        <FormField
+          control={form.control}
+          name="customId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Custom Field ID</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g., user_email" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="inputWidth"
@@ -447,6 +448,32 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
         />
         <FormField
           control={form.control}
+          name="borderWidth"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Border Width</FormLabel>
+              <FormControl>
+                <Input type="text" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="borderRadius"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Boreder  Radius</FormLabel>
+              <FormControl>
+                <Input type="text" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="size"
           render={({ field }) => (
             <FormItem>
@@ -488,19 +515,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="borderWidth"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Border Width</FormLabel>
-              <FormControl>
-                <Input type="text" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
         <FormField
           control={form.control}
           name="borderColor"
@@ -514,19 +529,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="borderRadius"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Boreder  Radius</FormLabel>
-              <FormControl>
-                <Input type="text" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
         <FormField
           control={form.control}
           name="required"
@@ -534,7 +537,6 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
             <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
               <div className="space-y-0.5">
                 <FormLabel>Required</FormLabel>
-                <FormDescription>If the field is mandatory</FormDescription>
               </div>
               <FormControl>
                 <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -543,6 +545,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
             </FormItem>
           )}
         />
+      
         <FormField
           control={form.control}
           name="calculationSteps"
